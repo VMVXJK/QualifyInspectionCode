@@ -1,38 +1,88 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { LocalItem } from '../types';
+import { getQualitativeText } from '../data/qualitative-values';
+import { getInspectItemName } from '../data/item-name-map';
+import { getInspectMethodName } from '../data/method-name-map';
+import { getInspectInstrumentName } from '../data/instrument-name-map';
 
 interface ItemCardProps {
   item: LocalItem;
   inputVal: string;
+  methodVal?: string;
+  instrumentVal?: string;
   onChange: (detailId: string, val: string) => void;
+  onPressSelect?: (item: LocalItem) => void;
+  onPressMethodSelect?: (item: LocalItem) => void;
+  onPressInstrumentSelect?: (item: LocalItem) => void;
 }
 
-export function ItemCard({ item, inputVal, onChange }: ItemCardProps) {
+export function ItemCard({
+  item,
+  inputVal,
+  methodVal,
+  instrumentVal,
+  onChange,
+  onPressSelect,
+  onPressMethodSelect,
+  onPressInstrumentSelect,
+}: ItemCardProps) {
   const method = (item.analysis_method || '').trim();
+  const isQualitative = method.includes('定性');
+
+  // 检验结果标签样式
+  const resultMeta = (() => {
+    const r = item.inspect_result1;
+    if (r === '合格') return { label: '合格', color: '#059669', bg: '#D1FAE5' };
+    if (r === '不合格') return { label: '不合格', color: '#DC2626', bg: '#FEE2E2' };
+    return null;
+  })();
+
+  const methodDisplay = getInspectMethodName(methodVal || item.inspect_method_name) || methodVal || item.inspect_method_name || '请选择检验方法';
+  const instrumentDisplay = getInspectInstrumentName(instrumentVal || item.inspect_instrument_name) || instrumentVal || item.inspect_instrument_name || '请选择检验仪器';
 
   return (
     <View style={styles.card}>
+      {/* Header：项目名称 + 检验结果 + 分析方法 */}
       <View style={styles.header}>
-        <Text style={styles.name}>{item.item_name || item.item_id || '未命名项目'}</Text>
-        <Text style={styles.method}>{method || '未指定'}</Text>
+        <Text style={styles.name} numberOfLines={1}>
+          {item.item_name || getInspectItemName(item.item_id) || item.item_id || '未命名项目'}
+        </Text>
+        <View style={styles.headerTags}>
+          {resultMeta && (
+            <View style={[styles.resultTag, { backgroundColor: resultMeta.bg }]}>
+              <Text style={[styles.resultTagText, { color: resultMeta.color }]}>{resultMeta.label}</Text>
+            </View>
+          )}
+          <Text style={styles.method}>{method || '未指定'}</Text>
+        </View>
       </View>
+
+      {/* 检测值 */}
       <View style={styles.row}>
         <Text style={styles.label}>检测值</Text>
-        <TextInput
-          style={styles.input}
-          value={inputVal}
-          onChangeText={(v) => onChange(item.detail_id || item.item_id, v)}
-          placeholder="请输入检测值"
-          keyboardType={method.includes('定量') ? 'decimal-pad' : 'default'}
-        />
+        {isQualitative ? (
+          <TouchableOpacity
+            style={styles.selectorBtn}
+            onPress={() => onPressSelect?.(item)}
+            activeOpacity={0.75}
+          >
+            <Text style={styles.selectorBtnText} numberOfLines={0}>
+              {getQualitativeText(inputVal) || '请选择检验值'}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <TextInput
+            style={styles.input}
+            value={inputVal}
+            onChangeText={(v) => onChange(item.detail_id || item.item_id, v)}
+            placeholder="请输入检测值"
+            keyboardType={method.includes('定量') ? 'decimal-pad' : 'default'}
+          />
+        )}
       </View>
-      {item.target_val !== undefined && item.target_val !== '' && (
-        <View style={styles.row}>
-          <Text style={styles.label}>目标值</Text>
-          <Text style={styles.readonly}>{item.target_val}</Text>
-        </View>
-      )}
+
+      {/* 标准范围 */}
       {item.upper_limit !== undefined && item.lower_limit !== undefined && (
         <View style={styles.row}>
           <Text style={styles.label}>标准范围</Text>
@@ -41,6 +91,8 @@ export function ItemCard({ item, inputVal, onChange }: ItemCardProps) {
           </Text>
         </View>
       )}
+
+      {/* 判定结果 */}
       {item.result && (
         <View style={styles.row}>
           <Text style={styles.label}>判定结果</Text>
@@ -53,6 +105,38 @@ export function ItemCard({ item, inputVal, onChange }: ItemCardProps) {
           >
             {item.result}
           </Text>
+        </View>
+      )}
+
+      {/* 检验方法 */}
+      <View style={styles.row}>
+        <Text style={styles.label}>检验方法</Text>
+        <TouchableOpacity
+          style={styles.selectorBtn}
+          onPress={() => onPressMethodSelect?.(item)}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.selectorBtnText} numberOfLines={0}>{methodDisplay}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 检验仪器 */}
+      <View style={styles.row}>
+        <Text style={styles.label}>检验仪器</Text>
+        <TouchableOpacity
+          style={styles.selectorBtn}
+          onPress={() => onPressInstrumentSelect?.(item)}
+          activeOpacity={0.75}
+        >
+          <Text style={styles.selectorBtnText} numberOfLines={0}>{instrumentDisplay}</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 缺陷等级（FDefectLevel1） */}
+      {item.defect_level1 && (
+        <View style={styles.row}>
+          <Text style={styles.label}>缺陷等级</Text>
+          <Text style={[styles.readonly, styles.defectLevel]}>{item.defect_level1}</Text>
         </View>
       )}
     </View>
@@ -80,6 +164,20 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     flex: 1,
   },
+  headerTags: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  resultTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  resultTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
   method: {
     fontSize: 12,
     color: '#64748B',
@@ -87,7 +185,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 4,
-    marginLeft: 8,
   },
   row: {
     flexDirection: 'row',
@@ -112,6 +209,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
     minHeight: 40,
   },
+  selectorBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: '#F8FAFC',
+    minHeight: 40,
+    justifyContent: 'center',
+  },
+  selectorBtnText: {
+    fontSize: 14,
+    color: '#1E293B',
+    lineHeight: 20,
+  },
   readonly: {
     flex: 1,
     fontSize: 14,
@@ -124,6 +237,10 @@ const styles = StyleSheet.create({
   },
   fail: {
     color: '#DC2626',
+    fontWeight: '600',
+  },
+  defectLevel: {
+    color: '#D97706',
     fontWeight: '600',
   },
 });

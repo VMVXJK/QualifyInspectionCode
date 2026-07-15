@@ -57,6 +57,15 @@ export interface LocalItem {
   inspect_standard?: string;
   /** 定性检验值选项列表（仅当 analysis_method === '定性' 时有值） */
   qualitative_options?: Array<{ code: string; text: string }>;
+  // 新增字段
+  /** 检验项目里的检验结果（FInspectResult1） */
+  inspect_result1?: string;
+  /** 检验方法名称 */
+  inspect_method_name?: string;
+  /** 检验仪器名称 */
+  inspect_instrument_name?: string;
+  /** 检验项目里的缺陷等级（FDefectLevel1） */
+  defect_level1?: string;
 }
 
 export interface LocalDefect {

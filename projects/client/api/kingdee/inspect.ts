@@ -872,6 +872,569 @@ export async function queryQualitativeOptions(
   return groups;
 }
 
+/* ════════════════════════════════════════
+   4. 同步检验方法映射表（BillQuery → AsyncStorage）
+   ════════════════════════════════════════ */
+
+const METHOD_MAP_STORAGE_KEY = '__sync_inspect_method_map';
+const QM_INSPECT_METHOD_FORM_ID = 'QM_InspectMethod';
+const METHOD_FIELD_KEYS = ['FNumber', 'FName'].join(',');
+
+export interface SyncDiagnostics {
+  request: unknown;
+  response: unknown;
+  error?: string;
+}
+
+/**
+ * 从金蝶 BillQuery 拉取检验方法基础资料（编码+名称）
+ * 并持久化到 AsyncStorage，供 getInspectMethodName 动态使用
+ *
+ * @returns success 是否成功；count 同步条数；diagnostics 诊断信息
+ */
+export async function syncInspectMethods(): Promise<{
+  success: boolean;
+  count: number;
+  diagnostics: SyncDiagnostics;
+}> {
+  const requestBody = {
+    data: {
+      FormId: QM_INSPECT_METHOD_FORM_ID,
+      FieldKeys: METHOD_FIELD_KEYS,
+      FilterString: '',
+      OrderString: 'FNumber',
+      StartRow: 0,
+      Limit: 2000,
+    },
+  };
+
+  let result: unknown;
+  let responseError: string | undefined;
+
+  try {
+    result = await callKingdeePost<unknown>('BillQuery', requestBody);
+  } catch (err) {
+    responseError = err instanceof Error ? err.message : '同步检验方法请求失败';
+    return {
+      success: false,
+      count: 0,
+      diagnostics: { request: requestBody, response: null, error: responseError },
+    };
+  }
+
+  const rows = parseBillQueryRows(result);
+  const map: Record<string, string> = {};
+
+  for (const row of rows) {
+    let code: string | undefined;
+    let name: string | undefined;
+
+    if (Array.isArray(row)) {
+      code = String(row[0] ?? '');
+      name = String(row[1] ?? '');
+    } else if (row && typeof row === 'object') {
+      const rec = row as Record<string, unknown>;
+      code = String(rec.FNumber ?? rec.FNUMBER ?? rec.fnumber ?? '');
+      name = String(rec.FName ?? rec.FNAME ?? rec.fname ?? '');
+    }
+
+    if (code && name) {
+      map[code] = name;
+    }
+  }
+
+  const count = Object.keys(map).length;
+
+  if (count === 0) {
+    return {
+      success: false,
+      count: 0,
+      diagnostics: {
+        request: requestBody,
+        response: result,
+        error: '未从金蝶获取到任何检验方法数据（返回为空或格式异常）',
+      },
+    };
+  }
+
+  try {
+    await AsyncStorage.setItem(METHOD_MAP_STORAGE_KEY, JSON.stringify(map));
+  } catch (storageErr) {
+    const msg = storageErr instanceof Error ? storageErr.message : '保存映射表到本地存储失败';
+    return {
+      success: false,
+      count,
+      diagnostics: { request: requestBody, response: result, error: msg },
+    };
+  }
+
+  return {
+    success: true,
+    count,
+    diagnostics: { request: requestBody, response: result },
+  };
+}
+
+/** 从 AsyncStorage 读取已同步的检验方法映射表 */
+export async function loadInspectMethodMapFromStorage(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(METHOD_MAP_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
+/* ════════════════════════════════════════
+   5. 同步检验项目映射表（BillQuery → AsyncStorage）
+   ════════════════════════════════════════ */
+
+const ITEM_MAP_STORAGE_KEY = '__sync_inspect_item_map';
+const QM_INSPECT_ITEM_FORM_ID = 'QM_InspectItem';
+const ITEM_FIELD_KEYS = ['FNumber', 'FName'].join(',');
+
+/**
+ * 从金蝶 BillQuery 拉取检验项目基础资料（编码+名称）
+ * 并持久化到 AsyncStorage，供 getInspectItemName 动态使用
+ */
+export async function syncInspectItems(): Promise<{
+  success: boolean;
+  count: number;
+  diagnostics: SyncDiagnostics;
+}> {
+  const requestBody = {
+    data: {
+      FormId: QM_INSPECT_ITEM_FORM_ID,
+      FieldKeys: ITEM_FIELD_KEYS,
+      FilterString: '',
+      OrderString: 'FNumber',
+      StartRow: 0,
+      Limit: 2000,
+    },
+  };
+
+  let result: unknown;
+  let responseError: string | undefined;
+
+  try {
+    result = await callKingdeePost<unknown>('BillQuery', requestBody);
+  } catch (err) {
+    responseError = err instanceof Error ? err.message : '同步检验项目请求失败';
+    return {
+      success: false,
+      count: 0,
+      diagnostics: { request: requestBody, response: null, error: responseError },
+    };
+  }
+
+  const rows = parseBillQueryRows(result);
+  const map: Record<string, string> = {};
+
+  for (const row of rows) {
+    let code: string | undefined;
+    let name: string | undefined;
+
+    if (Array.isArray(row)) {
+      code = String(row[0] ?? '');
+      name = String(row[1] ?? '');
+    } else if (row && typeof row === 'object') {
+      const rec = row as Record<string, unknown>;
+      code = String(rec.FNumber ?? rec.FNUMBER ?? rec.fnumber ?? '');
+      name = String(rec.FName ?? rec.FNAME ?? rec.fname ?? '');
+    }
+
+    if (code && name) {
+      map[code] = name;
+    }
+  }
+
+  const count = Object.keys(map).length;
+
+  if (count === 0) {
+    return {
+      success: false,
+      count: 0,
+      diagnostics: {
+        request: requestBody,
+        response: result,
+        error: '未从金蝶获取到任何检验项目数据（返回为空或格式异常）',
+      },
+    };
+  }
+
+  try {
+    await AsyncStorage.setItem(ITEM_MAP_STORAGE_KEY, JSON.stringify(map));
+  } catch (storageErr) {
+    const msg = storageErr instanceof Error ? storageErr.message : '保存映射表到本地存储失败';
+    return {
+      success: false,
+      count,
+      diagnostics: { request: requestBody, response: result, error: msg },
+    };
+  }
+
+  return {
+    success: true,
+    count,
+    diagnostics: { request: requestBody, response: result },
+  };
+}
+
+/** 从 AsyncStorage 读取已同步的检验项目映射表 */
+export async function loadInspectItemMapFromStorage(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(ITEM_MAP_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
+/* ════════════════════════════════════════
+   6. 同步检验仪器映射表（BillQuery → AsyncStorage）
+   ════════════════════════════════════════ */
+
+const INSTRUMENT_MAP_STORAGE_KEY = '__sync_inspect_instrument_map';
+const QM_INSPECT_INSTRUMENT_FORM_ID = 'QM_InspectInstrument';
+const INSTRUMENT_FIELD_KEYS = ['FNumber', 'FName'].join(',');
+
+/**
+ * 从金蝶 BillQuery 拉取检验仪器基础资料（编码+名称）
+ * 并持久化到 AsyncStorage，供 getInspectInstrumentName 动态使用
+ */
+export async function syncInspectInstruments(): Promise<{
+  success: boolean;
+  count: number;
+  diagnostics: SyncDiagnostics;
+}> {
+  const requestBody = {
+    data: {
+      FormId: QM_INSPECT_INSTRUMENT_FORM_ID,
+      FieldKeys: INSTRUMENT_FIELD_KEYS,
+      FilterString: '',
+      OrderString: 'FNumber',
+      StartRow: 0,
+      Limit: 2000,
+    },
+  };
+
+  let result: unknown;
+  let responseError: string | undefined;
+
+  try {
+    result = await callKingdeePost<unknown>('BillQuery', requestBody);
+  } catch (err) {
+    responseError = err instanceof Error ? err.message : '同步检验仪器请求失败';
+    return {
+      success: false,
+      count: 0,
+      diagnostics: { request: requestBody, response: null, error: responseError },
+    };
+  }
+
+  const rows = parseBillQueryRows(result);
+  const map: Record<string, string> = {};
+
+  for (const row of rows) {
+    let code: string | undefined;
+    let name: string | undefined;
+
+    if (Array.isArray(row)) {
+      code = String(row[0] ?? '');
+      name = String(row[1] ?? '');
+    } else if (row && typeof row === 'object') {
+      const rec = row as Record<string, unknown>;
+      code = String(rec.FNumber ?? rec.FNUMBER ?? rec.fnumber ?? '');
+      name = String(rec.FName ?? rec.FNAME ?? rec.fname ?? '');
+    }
+
+    if (code && name) {
+      map[code] = name;
+    }
+  }
+
+  const count = Object.keys(map).length;
+
+  if (count === 0) {
+    return {
+      success: false,
+      count: 0,
+      diagnostics: {
+        request: requestBody,
+        response: result,
+        error: '未从金蝶获取到任何检验仪器数据（返回为空或格式异常）',
+      },
+    };
+  }
+
+  try {
+    await AsyncStorage.setItem(INSTRUMENT_MAP_STORAGE_KEY, JSON.stringify(map));
+  } catch (storageErr) {
+    const msg = storageErr instanceof Error ? storageErr.message : '保存映射表到本地存储失败';
+    return {
+      success: false,
+      count,
+      diagnostics: { request: requestBody, response: result, error: msg },
+    };
+  }
+
+  return {
+    success: true,
+    count,
+    diagnostics: { request: requestBody, response: result },
+  };
+}
+
+/** 从 AsyncStorage 读取已同步的检验仪器映射表 */
+export async function loadInspectInstrumentMapFromStorage(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(INSTRUMENT_MAP_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
+/* ════════════════════════════════════════
+   7. 同步检测值映射表（BillQuery → AsyncStorage）
+   ════════════════════════════════════════ */
+
+const VALUE_MAP_STORAGE_KEY = '__sync_inspect_value_map';
+const QM_INSPECT_VALUE_FORM_ID = 'QM_InspectValue';
+const VALUE_FIELD_KEYS = ['FNumber', 'FName'].join(',');
+
+/**
+ * 从金蝶 BillQuery 拉取检测值基础资料（编码+名称）
+ * 并持久化到 AsyncStorage，供 getQualitativeText 动态使用
+ */
+export async function syncInspectValueOptions(): Promise<{
+  success: boolean;
+  count: number;
+  diagnostics: SyncDiagnostics;
+}> {
+  const requestBody = {
+    data: {
+      FormId: QM_INSPECT_VALUE_FORM_ID,
+      FieldKeys: VALUE_FIELD_KEYS,
+      FilterString: '',
+      OrderString: 'FNumber',
+      StartRow: 0,
+      Limit: 2000,
+    },
+  };
+
+  let result: unknown;
+  let responseError: string | undefined;
+
+  try {
+    result = await callKingdeePost<unknown>('BillQuery', requestBody);
+  } catch (err) {
+    responseError = err instanceof Error ? err.message : '同步检测值请求失败';
+    return {
+      success: false,
+      count: 0,
+      diagnostics: { request: requestBody, response: null, error: responseError },
+    };
+  }
+
+  const rows = parseBillQueryRows(result);
+  const map: Record<string, string> = {};
+
+  for (const row of rows) {
+    let code: string | undefined;
+    let name: string | undefined;
+
+    if (Array.isArray(row)) {
+      code = String(row[0] ?? '');
+      name = String(row[1] ?? '');
+    } else if (row && typeof row === 'object') {
+      const rec = row as Record<string, unknown>;
+      code = String(rec.FNumber ?? rec.FNUMBER ?? rec.fnumber ?? '');
+      name = String(rec.FName ?? rec.FNAME ?? rec.fname ?? '');
+    }
+
+    if (code && name) {
+      map[code] = name;
+    }
+  }
+
+  const count = Object.keys(map).length;
+
+  if (count === 0) {
+    return {
+      success: false,
+      count: 0,
+      diagnostics: {
+        request: requestBody,
+        response: result,
+        error: '未从金蝶获取到任何检测值数据（返回为空或格式异常）',
+      },
+    };
+  }
+
+  try {
+    await AsyncStorage.setItem(VALUE_MAP_STORAGE_KEY, JSON.stringify(map));
+  } catch (storageErr) {
+    const msg = storageErr instanceof Error ? storageErr.message : '保存映射表到本地存储失败';
+    return {
+      success: false,
+      count,
+      diagnostics: { request: requestBody, response: result, error: msg },
+    };
+  }
+
+  return {
+    success: true,
+    count,
+    diagnostics: { request: requestBody, response: result },
+  };
+}
+
+/** 从 AsyncStorage 读取已同步的检测值映射表 */
+export async function loadInspectValueMapFromStorage(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(VALUE_MAP_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
+/* ════════════════════════════════════════
+   8. 同步单据类型映射表（BillQuery → AsyncStorage）
+   ════════════════════════════════════════ */
+
+const BILL_TYPE_MAP_STORAGE_KEY = '__sync_bill_type_map';
+const BOS_BILL_TYPE_FORM_ID = 'BOS_BillType';
+const BILL_TYPE_FIELD_KEYS = ['FNumber', 'FName'].join(',');
+
+/**
+ * 从金蝶 BillQuery 拉取单据类型基础资料（编码+名称）
+ * 筛选编码包含 "JYD" 的单据类型，并持久化到 AsyncStorage
+ */
+export async function syncBillTypes(): Promise<{
+  success: boolean;
+  count: number;
+  diagnostics: SyncDiagnostics;
+}> {
+  const requestBody = {
+    data: {
+      FormId: BOS_BILL_TYPE_FORM_ID,
+      FieldKeys: BILL_TYPE_FIELD_KEYS,
+      FilterString: "FNumber like '%JYD%'",
+      OrderString: 'FNumber',
+      StartRow: 0,
+      Limit: 2000,
+    },
+  };
+
+  let result: unknown;
+  let responseError: string | undefined;
+
+  try {
+    result = await callKingdeePost<unknown>('BillQuery', requestBody);
+  } catch (err) {
+    responseError = err instanceof Error ? err.message : '同步单据类型请求失败';
+    return {
+      success: false,
+      count: 0,
+      diagnostics: { request: requestBody, response: null, error: responseError },
+    };
+  }
+
+  const rows = parseBillQueryRows(result);
+  const map: Record<string, string> = {};
+
+  for (const row of rows) {
+    let code: string | undefined;
+    let name: string | undefined;
+
+    if (Array.isArray(row)) {
+      code = String(row[0] ?? '');
+      name = String(row[1] ?? '');
+    } else if (row && typeof row === 'object') {
+      const rec = row as Record<string, unknown>;
+      code = String(rec.FNumber ?? rec.FNUMBER ?? rec.fnumber ?? '');
+      name = String(rec.FName ?? rec.FNAME ?? rec.fname ?? '');
+    }
+
+    if (code && name) {
+      map[code] = name;
+    }
+  }
+
+  const count = Object.keys(map).length;
+
+  if (count === 0) {
+    return {
+      success: false,
+      count: 0,
+      diagnostics: {
+        request: requestBody,
+        response: result,
+        error: '未从金蝶获取到任何单据类型数据（返回为空或格式异常）',
+      },
+    };
+  }
+
+  try {
+    await AsyncStorage.setItem(BILL_TYPE_MAP_STORAGE_KEY, JSON.stringify(map));
+  } catch (storageErr) {
+    const msg = storageErr instanceof Error ? storageErr.message : '保存映射表到本地存储失败';
+    return {
+      success: false,
+      count,
+      diagnostics: { request: requestBody, response: result, error: msg },
+    };
+  }
+
+  return {
+    success: true,
+    count,
+    diagnostics: { request: requestBody, response: result },
+  };
+}
+
+/** 从 AsyncStorage 读取已同步的单据类型映射表 */
+export async function loadBillTypeMapFromStorage(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(BILL_TYPE_MAP_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
 /** 从 BillQuery 返回的基础资料字段中提取编码字符串 */
 function extractCodeFromValue(val: unknown): string | undefined {
   if (val === null || val === undefined) return undefined;
@@ -1460,8 +2023,13 @@ function mapKdStatusForQuery(status: string): string {
   }
 }
 
+import { BILL_TYPE_NAME_MAP } from '@/screens/order-detail/data/bill-type-map';
+
 function mapBillTypeName(typeId: unknown): string {
   const id = String(typeId ?? '');
+  // 1. 优先使用统一维护的映射表
+  if (BILL_TYPE_NAME_MAP[id]) return BILL_TYPE_NAME_MAP[id];
+  // 2. 回退到包含匹配兜底
   if (id.includes('JYD001') || id.includes('Incoming') || id.includes(' incoming')) return '来料检验';
   if (id.includes('JYD002') || id.includes('Process') || id.includes('process')) return '过程检验';
   if (id.includes('JYD003') || id.includes('Shipping') || id.includes('shipping')) return '出货检验';
@@ -1941,6 +2509,18 @@ export function convertBillToLocal(bill: InspectBill): {
       console.log('[convertBillToLocal] final fallback name:', itemName);
     }
 
+    // 检验方法 & 检验仪器（基础资料对象，取名称）
+    const methodBase = pickBaseData(itRec, ['FInspectMethodId', 'FINSPECTMETHODID', 'InspectMethodId']);
+    const instrumentBase = pickBaseData(itRec, ['FInspectInstrumentId', 'FINSPECTINSTRUMENTID', 'InspectInstrumentId']);
+
+    // 检验项目里的检验结果（FInspectResult1）：1=合格, 2=不合格
+    const result1Code = pickString(itRec, ['FInspectResult1', 'InspectResult1']);
+    const inspectResult1 = result1Code === '2' ? '不合格' : result1Code === '1' ? '合格' : result1Code || '';
+
+    // 检验项目里的缺陷等级（FDefectLevel1）
+    const defectLevel1Raw = pickValue(itRec, ['FDefectLevel1', 'DefectLevel1', 'FDEFECTLEVEL1']);
+    const defectLevel1 = decodeDefectLevel(defectLevel1Raw) || '';
+
     return {
       detail_id: pickString(itRec, ['FDetailID', 'DetailID', 'Id']),
       item_id: pickBaseData(itRec, ['FInspectItemId', 'FInspectItemID', 'InspectItemId']).number || '',
@@ -1953,6 +2533,11 @@ export function convertBillToLocal(bill: InspectBill): {
       analysis_method: normalizedMethod,
       defect_level: pickString(itRec, ['FDefectLevel', 'DefectLevel']),
       inspect_standard: pickString(itRec, ['FInspectStandard', 'InspectStandard']),
+      // 新增字段
+      inspect_result1: inspectResult1,
+      inspect_method_name: methodBase.name || methodBase.number,
+      inspect_instrument_name: instrumentBase.name || instrumentBase.number,
+      defect_level1: defectLevel1,
     };
   });
 

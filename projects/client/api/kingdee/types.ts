@@ -304,6 +304,15 @@ export interface ItemInfo {
   analysis_method?: string;
   defect_level?: string;
   inspect_standard?: string;
+  // 新增字段
+  /** 检验项目里的检验结果（FInspectResult1） */
+  inspect_result1?: string;
+  /** 检验方法名称 */
+  inspect_method_name?: string;
+  /** 检验仪器名称 */
+  inspect_instrument_name?: string;
+  /** 检验项目里的缺陷等级（FDefectLevel1） */
+  defect_level1?: string;
 }
 
 export interface DefectInfo {

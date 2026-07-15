@@ -78,6 +78,26 @@ export default function SettingsScreen() {
             </View>
           </TouchableOpacity>
 
+          {/* 数据同步 */}
+          <TouchableOpacity
+            style={styles.card}
+            onPress={() => router.push('/data-sync')}
+            activeOpacity={0.75}
+          >
+            <View style={styles.actionRow}>
+              <View style={styles.actionLeft}>
+                <View style={[styles.actionIconWrap, { backgroundColor: '#ECFDF5' }]}>
+                  <Ionicons name="sync-outline" size={20} color="#059669" />
+                </View>
+                <View>
+                  <Text style={styles.actionTitle}>数据同步</Text>
+                  <Text style={styles.actionSub}>同步检验项目、方法、仪器映射表</Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            </View>
+          </TouchableOpacity>
+
           <View style={{ height: 40 }} />
         </ScrollView>
       </View>

@@ -16,8 +16,6 @@ interface BillDetailState {
   decisions: LocalDecision[];
   items: LocalItem[];
   defects: LocalDefect[];
-  /** 诊断信息（用于页面内展开显示） */
-  diagnostics: unknown;
 }
 
 interface UseBillDetailResult extends BillDetailState {
@@ -38,14 +36,12 @@ export function useBillDetail(orderId?: string, orderNo?: string): UseBillDetail
   const [decisions, setDecisions] = useState<LocalDecision[]>([]);
   const [items, setItems] = useState<LocalItem[]>([]);
   const [defects, setDefects] = useState<LocalDefect[]>([]);
-  const [diagnostics, setDiagnostics] = useState<unknown>(null);
 
   const hasFetchedRef = useRef(false);
   const cacheKey = BILL_DETAIL_CACHE_KEY(orderId || orderNo || '');
 
   const fetchDetail = useCallback(async (opts?: { silent?: boolean }) => {
     if (!opts?.silent) setLoading(true);
-    setDiagnostics(null);
 
     // 1. 先尝试加载本地缓存（离线时直接展示）
     let cachedLoaded = false;
@@ -103,31 +99,6 @@ export function useBillDetail(orderId?: string, orderNo?: string): UseBillDetail
       setItems(local.items as LocalItem[]);
       setDefects(local.defects as LocalDefect[]);
 
-      // 诊断：如果检验项目解析异常（为空或名称为空），保存原始响应
-      const hasEmptyName = (local.items as LocalItem[]).some((it) => !it.item_name?.trim());
-      if ((local.items as LocalItem[]).length === 0 || hasEmptyName) {
-        const billRec = (bill as unknown) as Record<string, unknown>;
-        const entryArr = (billRec.FEntity || billRec.Entity) as unknown[] | undefined;
-        const entry = entryArr?.[0] as Record<string, unknown> | undefined;
-        const firstItem = (local.items as LocalItem[])[0];
-        const diag = {
-          timestamp: new Date().toISOString(),
-          stage: (local.items as LocalItem[]).length === 0 ? 'items_empty' : 'item_name_empty',
-          error: (local.items as LocalItem[]).length === 0 ? '检验项目数组为空' : '检验项目名称为空',
-          identifier,
-          parsedItemCount: (local.items as LocalItem[]).length,
-          firstParsedItem: firstItem || null,
-          rawResult: {
-            billTopKeys: Object.keys(billRec),
-            entryKeys: entry ? Object.keys(entry) : null,
-            entryFItemDetail: entry?.FItemDetail ?? entry?.ItemDetail ?? entry?.F_QM_IBITEMDETAIL ?? null,
-            billFItemDetail: billRec.FItemDetail ?? billRec.F_QM_IBITEMDETAIL ?? null,
-            rawBill: bill,
-          },
-        };
-        setDiagnostics(diag);
-      }
-
       try {
         await AsyncStorage.setItem(
           cacheKey,
@@ -184,7 +155,6 @@ export function useBillDetail(orderId?: string, orderNo?: string): UseBillDetail
     decisions,
     items,
     defects,
-    diagnostics,
     fetchDetail,
     onRefresh,
   };

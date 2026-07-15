@@ -26,9 +26,14 @@ import { DecisionCard } from './components/DecisionCard';
 import { DefectModal } from './components/DefectModal';
 import { SelectModal } from './components/SelectModal';
 import type { SelectModalOption } from './components/SelectModal';
+import { QualitativeValueModal } from './components/QualitativeValueModal';
 import { SaveDiagnosticsPanel } from './components/SaveDiagnosticsPanel';
 
 import { STATUS_MAP, getUsePolicyOptions } from './constants';
+import { getQualitativeOptions, loadValueMapFromStorage } from './data/qualitative-values';
+import { INSPECT_METHOD_NAME_MAP, loadMethodMapFromStorage } from './data/method-name-map';
+import { INSPECT_INSTRUMENT_NAME_MAP, loadInstrumentMapFromStorage } from './data/instrument-name-map';
+import { INSPECT_ITEM_NAME_MAP, loadItemMapFromStorage } from './data/item-name-map';
 import type { LocalDefect } from './types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -38,6 +43,26 @@ const PAD = IS_PORTRAIT ? 16 : 20;
 export default function OrderDetailScreen() {
   const router = useSafeRouter();
   const { orderId, orderNo } = useSafeSearchParams<{ orderId: string; orderNo?: string }>();
+
+  // 定性检验值选择器状态
+  const [showQualitativeModal, setShowQualitativeModal] = useState(false);
+  const [qualitativeDetailId, setQualitativeDetailId] = useState('');
+  const [qualitativeValue, setQualitativeValue] = useState('');
+  const [qualitativeOptions, setQualitativeOptions] = useState(getQualitativeOptions());
+
+  // 检验方法选择器状态
+  const [showMethodModal, setShowMethodModal] = useState(false);
+  const [methodDetailId, setMethodDetailId] = useState('');
+  const [methodValue, setMethodValue] = useState('');
+
+  // 检验仪器选择器状态
+  const [showInstrumentModal, setShowInstrumentModal] = useState(false);
+  const [instrumentDetailId, setInstrumentDetailId] = useState('');
+  const [instrumentValue, setInstrumentValue] = useState('');
+
+  // 方法和仪器选项数据
+  const METHOD_OPTIONS = Object.entries(INSPECT_METHOD_NAME_MAP).map(([code, text]) => ({ code, text }));
+  const INSTRUMENT_OPTIONS = Object.entries(INSPECT_INSTRUMENT_NAME_MAP).map(([code, text]) => ({ code, text }));
 
   // 数据层
   const {
@@ -49,10 +74,29 @@ export default function OrderDetailScreen() {
     decisions,
     items,
     defects: remoteDefects,
-    diagnostics,
     fetchDetail,
     onRefresh,
   } = useBillDetail(orderId, orderNo);
+
+  // 预加载动态映射表（从 AsyncStorage）
+  useEffect(() => {
+    loadMethodMapFromStorage().catch(() => {
+      /* ignore */
+    });
+    loadItemMapFromStorage().catch(() => {
+      /* ignore */
+    });
+    loadInstrumentMapFromStorage().catch(() => {
+      /* ignore */
+    });
+    loadValueMapFromStorage()
+      .then(() => {
+        setQualitativeOptions(getQualitativeOptions());
+      })
+      .catch(() => {
+        /* ignore */
+      });
+  }, []);
 
   // 表单层
   const form = useInspectionForm({
@@ -64,6 +108,24 @@ export default function OrderDetailScreen() {
     rawBill,
     fetchDetail,
   });
+
+  const handleQualitativeSelect = useCallback((code: string) => {
+    setQualitativeValue(code);
+    form.handleItemChange(qualitativeDetailId, code);
+    setShowQualitativeModal(false);
+  }, [qualitativeDetailId, form]);
+
+  const handleMethodSelect = useCallback((code: string) => {
+    setMethodValue(code);
+    form.handleMethodChange(methodDetailId, code);
+    setShowMethodModal(false);
+  }, [methodDetailId, form]);
+
+  const handleInstrumentSelect = useCallback((code: string) => {
+    setInstrumentValue(code);
+    form.handleInstrumentChange(instrumentDetailId, code);
+    setShowInstrumentModal(false);
+  }, [instrumentDetailId, form]);
 
   // 通用选择器 Modal 状态
   const [showSelectModal, setShowSelectModal] = useState(false);
@@ -235,19 +297,26 @@ export default function OrderDetailScreen() {
                 key={item.detail_id || item.item_id}
                 item={item}
                 inputVal={form.editingItems[item.detail_id || item.item_id] ?? item.inspect_val ?? ''}
+                methodVal={form.editingMethods[item.detail_id || item.item_id]}
+                instrumentVal={form.editingInstruments[item.detail_id || item.item_id]}
                 onChange={form.handleItemChange}
+                onPressSelect={(it) => {
+                  setQualitativeDetailId(it.detail_id || it.item_id);
+                  setQualitativeValue(form.editingItems[it.detail_id || it.item_id] ?? it.inspect_val ?? '');
+                  setShowQualitativeModal(true);
+                }}
+                onPressMethodSelect={(it) => {
+                  setMethodDetailId(it.detail_id || it.item_id);
+                  setMethodValue(form.editingMethods[it.detail_id || it.item_id] ?? it.inspect_method_name ?? '');
+                  setShowMethodModal(true);
+                }}
+                onPressInstrumentSelect={(it) => {
+                  setInstrumentDetailId(it.detail_id || it.item_id);
+                  setInstrumentValue(form.editingInstruments[it.detail_id || it.item_id] ?? it.inspect_instrument_name ?? '');
+                  setShowInstrumentModal(true);
+                }}
               />
             ))
-          )}
-
-          {/* 诊断面板（完全展开，不可滑动） */}
-          {!!diagnostics && (
-            <View style={styles.diagPanel}>
-              <Text style={styles.diagTitle}>📋 诊断信息</Text>
-              <Text style={styles.diagText}>
-                {JSON.stringify(diagnostics, null, 2)}
-              </Text>
-            </View>
           )}
         </Section>
 
@@ -328,6 +397,35 @@ export default function OrderDetailScreen() {
         }}
         onClose={() => setShowSelectModal(false)}
       />
+
+      {/* 定性检验值选择器 Modal */}
+      <QualitativeValueModal
+        visible={showQualitativeModal}
+        value={qualitativeValue}
+        options={qualitativeOptions}
+        onSelect={handleQualitativeSelect}
+        onClose={() => setShowQualitativeModal(false)}
+      />
+
+      {/* 检验方法选择器 Modal */}
+      <QualitativeValueModal
+        visible={showMethodModal}
+        title="选择检验方法"
+        value={methodValue}
+        options={METHOD_OPTIONS}
+        onSelect={handleMethodSelect}
+        onClose={() => setShowMethodModal(false)}
+      />
+
+      {/* 检验仪器选择器 Modal */}
+      <QualitativeValueModal
+        visible={showInstrumentModal}
+        title="选择检验仪器"
+        value={instrumentValue}
+        options={INSTRUMENT_OPTIONS}
+        onSelect={handleInstrumentSelect}
+        onClose={() => setShowInstrumentModal(false)}
+      />
     </Screen>
   );
 }
@@ -401,27 +499,4 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
-
-  /* Diagnostics Panel */
-  diagPanel: {
-    marginTop: 12,
-    backgroundColor: '#0F172A',
-    borderRadius: 12,
-    padding: 12,
-  },
-  diagTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FBBF24',
-    marginBottom: 8,
-  },
-  diagScroll: {
-    maxHeight: 300,
-  },
-  diagText: {
-    fontSize: 11,
-    color: '#E2E8F0',
-    fontFamily: 'monospace',
-    lineHeight: 16,
-  },
 });

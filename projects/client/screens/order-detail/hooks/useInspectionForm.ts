@@ -17,11 +17,15 @@ interface UseInspectionFormParams {
 
 interface UseInspectionFormResult {
   editingItems: Record<string, string>;
+  editingMethods: Record<string, string>;
+  editingInstruments: Record<string, string>;
   editingDecisions: LocalDecision[];
   saveDiagnostics: SaveDiagnostics | null;
   showSaveDiagnostics: boolean;
   setShowSaveDiagnostics: React.Dispatch<React.SetStateAction<boolean>>;
   handleItemChange: (detailId: string, val: string) => void;
+  handleMethodChange: (detailId: string, val: string) => void;
+  handleInstrumentChange: (detailId: string, val: string) => void;
   getItemResult: (item: LocalItem) => string;
   setEditingDecisions: React.Dispatch<React.SetStateAction<LocalDecision[]>>;
   addDecision: () => void;
@@ -49,6 +53,24 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     return init;
   });
 
+  // 检验方法编辑态：detailId -> methodCode
+  const [editingMethods, setEditingMethods] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    items.forEach((it) => {
+      if (it.detail_id) init[it.detail_id] = it.inspect_method_name || '';
+    });
+    return init;
+  });
+
+  // 检验仪器编辑态：detailId -> instrumentCode
+  const [editingInstruments, setEditingInstruments] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    items.forEach((it) => {
+      if (it.detail_id) init[it.detail_id] = it.inspect_instrument_name || '';
+    });
+    return init;
+  });
+
   // 决策编辑态
   const [editingDecisions, setEditingDecisions] = useState<LocalDecision[]>(initialDecisions);
 
@@ -69,6 +91,22 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
   }, [items]);
 
   useEffect(() => {
+    const init: Record<string, string> = {};
+    items.forEach((it) => {
+      if (it.detail_id) init[it.detail_id] = it.inspect_method_name || '';
+    });
+    setEditingMethods(init);
+  }, [items]);
+
+  useEffect(() => {
+    const init: Record<string, string> = {};
+    items.forEach((it) => {
+      if (it.detail_id) init[it.detail_id] = it.inspect_instrument_name || '';
+    });
+    setEditingInstruments(init);
+  }, [items]);
+
+  useEffect(() => {
     setEditingDecisions(initialDecisions);
   }, [initialDecisions]);
 
@@ -78,6 +116,14 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
 
   const handleItemChange = useCallback((detailId: string, val: string) => {
     setEditingItems((prev) => ({ ...prev, [detailId]: val }));
+  }, []);
+
+  const handleMethodChange = useCallback((detailId: string, val: string) => {
+    setEditingMethods((prev) => ({ ...prev, [detailId]: val }));
+  }, []);
+
+  const handleInstrumentChange = useCallback((detailId: string, val: string) => {
+    setEditingInstruments((prev) => ({ ...prev, [detailId]: val }));
   }, []);
 
   const getItemResult = useCallback((item: LocalItem): string => {
@@ -188,11 +234,15 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
 
   return {
     editingItems,
+    editingMethods,
+    editingInstruments,
     editingDecisions,
     saveDiagnostics,
     showSaveDiagnostics,
     setShowSaveDiagnostics,
     handleItemChange,
+    handleMethodChange,
+    handleInstrumentChange,
     getItemResult,
     setEditingDecisions,
     addDecision,

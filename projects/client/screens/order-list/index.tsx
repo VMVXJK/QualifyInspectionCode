@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { queryInspectBills } from '@/api/kingdee/inspect';
 import { useAuth } from '@/contexts/AuthContext';
 import { showError, showSuccess } from '@/utils/toast';
+import { getBillTypeName, loadBillTypeMapFromStorageLocal } from '@/screens/order-detail/data/bill-type-map';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const IS_PORTRAIT = Dimensions.get('window').height >= Dimensions.get('window').width;
@@ -55,14 +56,6 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
   inspecting: { label: '审批中', color: '#2563EB', bg: '#DBEAFE' },
   completed: { label: '已完成', color: '#059669', bg: '#D1FAE5' },
 };
-
-/** 根据金蝶单据类型编码映射名称 */
-function resolveTypeLabel(typeId: string): string {
-  if (typeId.includes(' Incoming') || typeId.includes(' incoming') || typeId.includes('Incoming')) return '来料检验';
-  if (typeId.includes('Process') || typeId.includes('process')) return '过程检验';
-  if (typeId.includes('Shipping') || typeId.includes('shipping')) return '出货检验';
-  return typeId;
-}
 
 export default function OrderListScreen() {
   const [orders, setOrders] = useState<InspectionOrder[]>([]);
@@ -117,7 +110,7 @@ export default function OrderListScreen() {
       const mapped = result.rows.map((r) => ({
         id: r.id,
         order_no: r.order_no,
-        type: r.type_name || resolveTypeLabel(r.type_id || r.type),
+        type: r.type_name || getBillTypeName(r.type_id || r.type) || r.type_id || r.type,
         type_id: r.type_id || r.type,
         date: r.date,
         status: r.status,
@@ -154,6 +147,11 @@ export default function OrderListScreen() {
   useFocusEffect(
     useCallback(() => {
       const init = async () => {
+        // 预加载单据类型映射表
+        loadBillTypeMapFromStorageLocal().catch(() => {
+          /* ignore */
+        });
+
         if (showList && !hasFetchedRef.current) {
           hasFetchedRef.current = true;
           const hasCache = await loadCachedOrders();
