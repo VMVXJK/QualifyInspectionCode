@@ -1,0 +1,93 @@
+- generic [ref=e6]:
+  - generic [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]: "| API中心"
+      - button "企业版 " [ref=e14] [cursor=pointer]:
+        - text: 企业版
+        - generic [ref=e15]: 
+    - menubar [ref=e17]:
+      - menuitem "首页" [ref=e18] [cursor=pointer]
+      - menuitem "开发指南" [ref=e19] [cursor=pointer]
+      - menuitem "API文档" [ref=e20] [cursor=pointer]
+      - menuitem "SDK中心" [ref=e21] [cursor=pointer]
+    - button "登 录" [ref=e25] [cursor=pointer]
+  - generic [ref=e27]:
+    - generic [ref=e31]:
+      - generic [ref=e32]: 金蝶云星空 OpenAPI
+      - generic [ref=e33]: 服务、能力和数据的全面开放，轻松实现系统集成
+      - generic [ref=e36] [cursor=pointer]: 免费体验
+    - generic [ref=e38]:
+      - generic [ref=e40]:
+        - generic [ref=e42]: OpenAPI 产品特性
+        - generic [ref=e43]:
+          - img [ref=e46]
+          - generic [ref=e48]:
+            - generic [ref=e50]: 全面开放
+            - generic [ref=e51]: 金蝶云星空OpenAPI适用于各类业务场景，所有单据和基础信息操作全面开放，实现全领域赋能。
+        - generic [ref=e52]:
+          - generic [ref=e54]:
+            - generic [ref=e56]: 高效开发
+            - generic [ref=e57]: 金蝶云星空OpenAPI提供.Net、JAVA 、Python等多语言版本SDK,接口丰富，即调即用。助力企业高效发展。
+          - img [ref=e60]
+        - generic [ref=e61]:
+          - img [ref=e64]
+          - generic [ref=e66]:
+            - generic [ref=e68]: 安全可靠
+            - generic [ref=e69]: 金蝶云星空API网关提供多种认证授权：TLS/SSL机制、请求校验、黑白名单等，实现系统集成安全可靠。
+      - generic [ref=e71]:
+        - generic [ref=e73]: OpenAPI 入门指南
+        - generic [ref=e74]:
+          - generic [ref=e79] [cursor=pointer]:
+            - text: 如何获取第三方登录授权?
+            - generic [ref=e81]: 文章
+          - generic [ref=e86] [cursor=pointer]:
+            - text: 如何使用SDK?
+            - generic [ref=e88]: 文章
+          - generic [ref=e93] [cursor=pointer]:
+            - text: 如何调用OpenAPI接口?
+            - generic [ref=e95]: 文章
+          - generic [ref=e100] [cursor=pointer]:
+            - text: 如何在线测试?
+            - generic [ref=e102]: 文章
+      - generic [ref=e105]:
+        - generic [ref=e106]: OpenAPI 接入流程
+        - generic [ref=e107] [cursor=pointer]:
+          - generic [ref=e108]:
+            - img [ref=e109]
+            - generic [ref=e111]: 获取第三方登录授权
+          - generic [ref=e112]:
+            - img [ref=e113]
+            - generic [ref=e115]: 使用SDK
+          - generic [ref=e116]:
+            - img [ref=e117]
+            - generic [ref=e119]: 使用OpenAPI接口
+          - generic [ref=e120]:
+            - img [ref=e121]
+            - generic [ref=e123]: 系统集成
+  - generic [ref=e125]:
+    - generic [ref=e127]:
+      - link [ref=e129] [cursor=pointer]:
+        - /url: "#"
+      - generic [ref=e130]:
+        - generic [ref=e131]:
+          - generic [ref=e132]: QQ群
+          - generic [ref=e133]: "857982100"
+        - generic [ref=e134]:
+          - generic [ref=e135]: 协同开发平台
+          - generic [ref=e136]: 0755-86073354
+    - generic [ref=e138]:
+      - generic [ref=e139]:
+        - generic [ref=e140]: 金蝶软件（中国）有限公司 版权所有©1993-2026
+        - link "粤ICP备05041751号" [ref=e141] [cursor=pointer]:
+          - /url: https://beian.miit.gov.cn
+          - generic [ref=e142]: 粤ICP备05041751号
+        - link "粤公网安备 44030502002324号" [ref=e143] [cursor=pointer]:
+          - /url: http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=44030502002324
+          - generic [ref=e144]: 粤公网安备 44030502002324号
+      - generic [ref=e145]:
+        - link "用户协议 |" [ref=e146] [cursor=pointer]:
+          - /url: https://cloud.kingdee.com/passport/#/policy-agree/client-kd
+          - generic [ref=e147]: 用户协议 |
+        - link "隐私政策" [ref=e148] [cursor=pointer]:
+          - /url: https://cloud.kingdee.com/passport/#/policy-agree/privacy-policy
+          - generic [ref=e149]: 隐私政策

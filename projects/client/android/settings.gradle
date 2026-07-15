@@ -1,0 +1,41 @@
+pluginManagement {
+  includeBuild('../node_modules/@react-native/gradle-plugin')
+  includeBuild('../node_modules/expo-modules-autolinking/android/expo-gradle-plugin')
+}
+
+plugins {
+  id("com.facebook.react.settings")
+  id("expo-autolinking-settings")
+}
+
+dependencyResolutionManagement {
+  buildscript {
+    repositories {
+      google()
+      mavenCentral()
+    }
+    configurations.classpath {
+      resolutionStrategy {
+        force 'com.android.tools.build:gradle:8.11.0'
+      }
+    }
+  }
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+  if (System.getenv('EXPO_USE_COMMUNITY_AUTOLINKING') == '1') {
+    ex.autolinkLibrariesFromCommand()
+  } else {
+    ex.autolinkLibrariesFromCommand(expoAutolinking.rnConfigCommand)
+  }
+}
+expoAutolinking.useExpoModules()
+
+rootProject.name = 'QualifyInspection'
+
+expoAutolinking.useExpoVersionCatalog()
+
+include ':app'
+// 绕过 Windows 中文路径问题
+includeBuild('../node_modules/@react-native/gradle-plugin')
+includeBuild('../node_modules/expo-modules-autolinking/android/expo-gradle-plugin')

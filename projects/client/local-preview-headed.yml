@@ -1,0 +1,24 @@
+- generic [ref=e12]:
+  - generic [ref=e13]:
+    - generic [ref=e15]: 
+    - generic [ref=e16]: QualifyInspection
+    - generic [ref=e17]: Quality Inspection Workbench
+  - generic [ref=e18] [cursor=pointer]:
+    - generic [ref=e19]: 
+    - generic [ref=e20]:
+      - generic [ref=e21]: 未登录金蝶云星空
+      - generic [ref=e22]: 点击此处完成登录，同步检验单数据
+    - generic [ref=e23]: 
+  - generic [ref=e24]:
+    - generic [ref=e25] [cursor=pointer]:
+      - generic [ref=e27]: 
+      - generic [ref=e28]:
+        - generic [ref=e29]: 检验单管理
+        - generic [ref=e30]: 0 张待检验单
+      - generic [ref=e31]: 
+    - generic [ref=e32] [cursor=pointer]:
+      - generic [ref=e34]: 
+      - generic [ref=e35]:
+        - generic [ref=e36]: 系统设置
+        - generic [ref=e37]: 查看连接状态
+      - generic [ref=e38]: 

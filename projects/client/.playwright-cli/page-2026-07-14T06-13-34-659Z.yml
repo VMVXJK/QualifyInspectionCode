@@ -1,0 +1,740 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - paragraph [ref=e6]
+    - generic [ref=e9]:
+      - paragraph [ref=e10]: 立即注册
+      - generic [ref=e11]:
+        - generic [ref=e13]:
+          - generic [ref=e14] [cursor=pointer]: "86"
+          - generic:
+            - generic:
+              - generic:
+                - textbox "请输入所在国家或地区中文名称"
+              - generic:
+                - generic:
+                  - generic: "+86"
+                  - generic: 中国
+                - generic:
+                  - generic: "+852"
+                  - generic: 中国香港特别行政区
+                - generic:
+                  - generic: "+886"
+                  - generic: 中国台湾
+                - generic:
+                  - generic: "+853"
+                  - generic: 中国澳门特别行政区
+                - generic:
+                  - generic: "+1"
+                  - generic: 美国
+                - generic:
+                  - generic: "+60"
+                  - generic: 马来西亚
+                - generic:
+                  - generic: "+95"
+                  - generic: 缅甸
+                - generic:
+                  - generic: "+65"
+                  - generic: 新加坡
+                - generic:
+                  - generic: "+855"
+                  - generic: 柬埔寨
+                - generic:
+                  - generic: "+376"
+                  - generic: 安道尔共和国
+                - generic:
+                  - generic: "+971"
+                  - generic: 阿拉伯联合酋长国
+                - generic:
+                  - generic: "+93"
+                  - generic: 阿富汗
+                - generic:
+                  - generic: "+355"
+                  - generic: 阿尔巴尼亚
+                - generic:
+                  - generic: "+213"
+                  - generic: 阿尔及利亚
+                - generic:
+                  - generic: "+1264"
+                  - generic: 安圭拉岛
+                - generic:
+                  - generic: "+1268"
+                  - generic: 安提瓜和巴布达
+                - generic:
+                  - generic: "+54"
+                  - generic: 阿根廷
+                - generic:
+                  - generic: "+374"
+                  - generic: 亚美尼亚
+                - generic:
+                  - generic: "+61"
+                  - generic: 澳大利亚
+                - generic:
+                  - generic: "+43"
+                  - generic: 奥地利
+                - generic:
+                  - generic: "+994"
+                  - generic: 阿塞拜疆
+                - generic:
+                  - generic: "+1246"
+                  - generic: 巴巴多斯
+                - generic:
+                  - generic: "+880"
+                  - generic: 孟加拉国
+                - generic:
+                  - generic: "+32"
+                  - generic: 比利时
+                - generic:
+                  - generic: "+226"
+                  - generic: 布基纳法索
+                - generic:
+                  - generic: "+359"
+                  - generic: 保加利亚
+                - generic:
+                  - generic: "+973"
+                  - generic: 巴林
+                - generic:
+                  - generic: "+257"
+                  - generic: 布隆迪
+                - generic:
+                  - generic: "+229"
+                  - generic: 贝宁
+                - generic:
+                  - generic: "+970"
+                  - generic: 巴勒斯坦
+                - generic:
+                  - generic: "+1441"
+                  - generic: 百慕大群岛
+                - generic:
+                  - generic: "+673"
+                  - generic: 文莱
+                - generic:
+                  - generic: "+591"
+                  - generic: 玻利维亚
+                - generic:
+                  - generic: "+55"
+                  - generic: 巴西
+                - generic:
+                  - generic: "+1242"
+                  - generic: 巴哈马
+                - generic:
+                  - generic: "+267"
+                  - generic: 博茨瓦纳
+                - generic:
+                  - generic: "+375"
+                  - generic: 白俄罗斯
+                - generic:
+                  - generic: "+501"
+                  - generic: 伯利兹
+                - generic:
+                  - generic: "+236"
+                  - generic: 中非共和国
+                - generic:
+                  - generic: "+242"
+                  - generic: 刚果
+                - generic:
+                  - generic: "+41"
+                  - generic: 瑞士
+                - generic:
+                  - generic: "+682"
+                  - generic: 库克群岛
+                - generic:
+                  - generic: "+56"
+                  - generic: 智利
+                - generic:
+                  - generic: "+237"
+                  - generic: 喀麦隆
+                - generic:
+                  - generic: "+57"
+                  - generic: 哥伦比亚
+                - generic:
+                  - generic: "+506"
+                  - generic: 哥斯达黎加
+                - generic:
+                  - generic: "+53"
+                  - generic: 古巴
+                - generic:
+                  - generic: "+357"
+                  - generic: 塞浦路斯
+                - generic:
+                  - generic: "+420"
+                  - generic: 捷克
+                - generic:
+                  - generic: "+1"
+                  - generic: 加拿大
+                - generic:
+                  - generic: "+1345"
+                  - generic: 开曼群岛
+                - generic:
+                  - generic: "+49"
+                  - generic: 德国
+                - generic:
+                  - generic: "+253"
+                  - generic: 吉布提
+                - generic:
+                  - generic: "+45"
+                  - generic: 丹麦
+                - generic:
+                  - generic: "+1809"
+                  - generic: 多米尼加共和国
+                - generic:
+                  - generic: "+593"
+                  - generic: 厄瓜多尔
+                - generic:
+                  - generic: "+372"
+                  - generic: 爱沙尼亚
+                - generic:
+                  - generic: "+20"
+                  - generic: 埃及
+                - generic:
+                  - generic: "+34"
+                  - generic: 西班牙
+                - generic:
+                  - generic: "+251"
+                  - generic: 埃塞俄比亚
+                - generic:
+                  - generic: "+358"
+                  - generic: 芬兰
+                - generic:
+                  - generic: "+679"
+                  - generic: 斐济
+                - generic:
+                  - generic: "+33"
+                  - generic: 法国
+                - generic:
+                  - generic: "+241"
+                  - generic: 加蓬
+                - generic:
+                  - generic: "+44"
+                  - generic: 英国
+                - generic:
+                  - generic: "+1473"
+                  - generic: 格林纳达
+                - generic:
+                  - generic: "+995"
+                  - generic: 格鲁吉亚
+                - generic:
+                  - generic: "+594"
+                  - generic: 法属圭亚那
+                - generic:
+                  - generic: "+233"
+                  - generic: 加纳
+                - generic:
+                  - generic: "+350"
+                  - generic: 直布罗陀
+                - generic:
+                  - generic: "+220"
+                  - generic: 冈比亚
+                - generic:
+                  - generic: "+224"
+                  - generic: 几内亚
+                - generic:
+                  - generic: "+30"
+                  - generic: 希腊
+                - generic:
+                  - generic: "+502"
+                  - generic: 危地马拉
+                - generic:
+                  - generic: "+1671"
+                  - generic: 关岛
+                - generic:
+                  - generic: "+592"
+                  - generic: 圭亚那
+                - generic:
+                  - generic: "+504"
+                  - generic: 洪都拉斯
+                - generic:
+                  - generic: "+509"
+                  - generic: 海地
+                - generic:
+                  - generic: "+36"
+                  - generic: 匈牙利
+                - generic:
+                  - generic: "+62"
+                  - generic: 印度尼西亚
+                - generic:
+                  - generic: "+353"
+                  - generic: 爱尔兰
+                - generic:
+                  - generic: "+972"
+                  - generic: 以色列
+                - generic:
+                  - generic: "+91"
+                  - generic: 印度
+                - generic:
+                  - generic: "+964"
+                  - generic: 伊拉克
+                - generic:
+                  - generic: "+98"
+                  - generic: 伊朗
+                - generic:
+                  - generic: "+354"
+                  - generic: 冰岛
+                - generic:
+                  - generic: "+39"
+                  - generic: 意大利
+                - generic:
+                  - generic: "+856"
+                  - generic: 老挝
+                - generic:
+                  - generic: "+961"
+                  - generic: 黎巴嫩
+                - generic:
+                  - generic: "+1758"
+                  - generic: 圣卢西亚
+                - generic:
+                  - generic: "+423"
+                  - generic: 列支敦士登
+                - generic:
+                  - generic: "+94"
+                  - generic: 斯里兰卡
+                - generic:
+                  - generic: "+231"
+                  - generic: 利比里亚
+                - generic:
+                  - generic: "+266"
+                  - generic: 莱索托
+                - generic:
+                  - generic: "+370"
+                  - generic: 立陶宛
+                - generic:
+                  - generic: "+352"
+                  - generic: 卢森堡
+                - generic:
+                  - generic: "+371"
+                  - generic: 拉脱维亚
+                - generic:
+                  - generic: "+218"
+                  - generic: 利比亚
+                - generic:
+                  - generic: "+212"
+                  - generic: 摩洛哥
+                - generic:
+                  - generic: "+377"
+                  - generic: 摩纳哥
+                - generic:
+                  - generic: "+373"
+                  - generic: 摩尔多瓦
+                - generic:
+                  - generic: "+261"
+                  - generic: 马达加斯加
+                - generic:
+                  - generic: "+223"
+                  - generic: 马里
+                - generic:
+                  - generic: "+976"
+                  - generic: 蒙古
+                - generic:
+                  - generic: "+1664"
+                  - generic: 蒙特塞拉特岛
+                - generic:
+                  - generic: "+356"
+                  - generic: 马耳他
+                - generic:
+                  - generic: "+1670"
+                  - generic: 北马利安纳群岛
+                - generic:
+                  - generic: "+230"
+                  - generic: 毛里求斯
+                - generic:
+                  - generic: "+960"
+                  - generic: 马尔代夫
+                - generic:
+                  - generic: "+265"
+                  - generic: 马拉维
+                - generic:
+                  - generic: "+52"
+                  - generic: 墨西哥
+                - generic:
+                  - generic: "+258"
+                  - generic: 莫桑比克
+                - generic:
+                  - generic: "+264"
+                  - generic: 纳米比亚
+                - generic:
+                  - generic: "+227"
+                  - generic: 尼日尔
+                - generic:
+                  - generic: "+234"
+                  - generic: 尼日利亚
+                - generic:
+                  - generic: "+505"
+                  - generic: 尼加拉瓜
+                - generic:
+                  - generic: "+31"
+                  - generic: 荷兰
+                - generic:
+                  - generic: "+47"
+                  - generic: 挪威
+                - generic:
+                  - generic: "+977"
+                  - generic: 尼泊尔
+                - generic:
+                  - generic: "+599"
+                  - generic: 荷属安的列斯
+                - generic:
+                  - generic: "+674"
+                  - generic: 瑙鲁
+                - generic:
+                  - generic: "+64"
+                  - generic: 新西兰
+                - generic:
+                  - generic: "+968"
+                  - generic: 阿曼
+                - generic:
+                  - generic: "+51"
+                  - generic: 秘鲁
+                - generic:
+                  - generic: "+689"
+                  - generic: 法属玻利尼西亚
+                - generic:
+                  - generic: "+675"
+                  - generic: 巴布亚新几内亚
+                - generic:
+                  - generic: "+63"
+                  - generic: 菲律宾
+                - generic:
+                  - generic: "+92"
+                  - generic: 巴基斯坦
+                - generic:
+                  - generic: "+48"
+                  - generic: 波兰
+                - generic:
+                  - generic: "+1787"
+                  - generic: 波多黎各
+                - generic:
+                  - generic: "+351"
+                  - generic: 葡萄牙
+                - generic:
+                  - generic: "+595"
+                  - generic: 巴拉圭
+                - generic:
+                  - generic: "+974"
+                  - generic: 卡塔尔
+                - generic:
+                  - generic: "+262"
+                  - generic: 留尼旺
+                - generic:
+                  - generic: "+40"
+                  - generic: 罗马尼亚
+                - generic:
+                  - generic: "+7"
+                  - generic: 俄罗斯
+                - generic:
+                  - generic: "+966"
+                  - generic: 沙特阿拉伯
+                - generic:
+                  - generic: "+677"
+                  - generic: 所罗门群岛
+                - generic:
+                  - generic: "+248"
+                  - generic: 塞舌尔
+                - generic:
+                  - generic: "+249"
+                  - generic: 苏丹
+                - generic:
+                  - generic: "+46"
+                  - generic: 瑞典
+                - generic:
+                  - generic: "+386"
+                  - generic: 斯洛文尼亚
+                - generic:
+                  - generic: "+421"
+                  - generic: 斯洛伐克
+                - generic:
+                  - generic: "+232"
+                  - generic: 塞拉利昂
+                - generic:
+                  - generic: "+378"
+                  - generic: 圣马力诺
+                - generic:
+                  - generic: "+684"
+                  - generic: 东萨摩亚(美)
+                - generic:
+                  - generic: "+685"
+                  - generic: 西萨摩亚
+                - generic:
+                  - generic: "+221"
+                  - generic: 塞内加尔
+                - generic:
+                  - generic: "+252"
+                  - generic: 索马里
+                - generic:
+                  - generic: "+597"
+                  - generic: 苏里南
+                - generic:
+                  - generic: "+239"
+                  - generic: 圣多美和普林西比
+                - generic:
+                  - generic: "+503"
+                  - generic: 萨尔瓦多
+                - generic:
+                  - generic: "+963"
+                  - generic: 叙利亚
+                - generic:
+                  - generic: "+268"
+                  - generic: 斯威士兰
+                - generic:
+                  - generic: "+235"
+                  - generic: 乍得
+                - generic:
+                  - generic: "+228"
+                  - generic: 多哥
+                - generic:
+                  - generic: "+66"
+                  - generic: 泰国
+                - generic:
+                  - generic: "+992"
+                  - generic: 塔吉克斯坦
+                - generic:
+                  - generic: "+993"
+                  - generic: 土库曼斯坦
+                - generic:
+                  - generic: "+216"
+                  - generic: 突尼斯
+                - generic:
+                  - generic: "+676"
+                  - generic: 汤加
+                - generic:
+                  - generic: "+90"
+                  - generic: 土耳其
+                - generic:
+                  - generic: "+1868"
+                  - generic: 特立尼达和多巴哥
+                - generic:
+                  - generic: "+255"
+                  - generic: 坦桑尼亚
+                - generic:
+                  - generic: "+380"
+                  - generic: 乌克兰
+                - generic:
+                  - generic: "+256"
+                  - generic: 乌干达
+                - generic:
+                  - generic: "+598"
+                  - generic: 乌拉圭
+                - generic:
+                  - generic: "+998"
+                  - generic: 乌兹别克斯坦
+                - generic:
+                  - generic: "+1784"
+                  - generic: 圣文森特岛
+                - generic:
+                  - generic: "+58"
+                  - generic: 委内瑞拉
+                - generic:
+                  - generic: "+84"
+                  - generic: 越南
+                - generic:
+                  - generic: "+967"
+                  - generic: 也门
+                - generic:
+                  - generic: "+27"
+                  - generic: 南非
+                - generic:
+                  - generic: "+260"
+                  - generic: 赞比亚
+                - generic:
+                  - generic: "+243"
+                  - generic: 刚果民主共和国（刚果金）
+                - generic:
+                  - generic: "+263"
+                  - generic: 津巴布韦
+                - generic:
+                  - generic: "+81"
+                  - generic: 日本
+                - generic:
+                  - generic: "+240"
+                  - generic: 赤道几内亚
+                - generic:
+                  - generic: "+82"
+                  - generic: 韩国
+                - generic:
+                  - generic: "+225"
+                  - generic: 科特迪瓦
+                - generic:
+                  - generic: "+507"
+                  - generic: 巴拿马
+                - generic:
+                  - generic: "+254"
+                  - generic: 肯尼亚共和国
+                - generic:
+                  - generic: "+7"
+                  - generic: 哈萨克斯坦
+                - generic:
+                  - generic: "+599"
+                  - generic: 库拉索
+                - generic:
+                  - generic: "+212"
+                  - generic: 西撒哈拉
+                - generic:
+                  - generic: "+680"
+                  - generic: 帕劳
+                - generic:
+                  - generic: "+1284"
+                  - generic: 英属维尔京群岛
+                - generic:
+                  - generic: "+2721"
+                  - generic: 开普
+                - generic:
+                  - generic: "+686"
+                  - generic: 基里巴斯
+                - generic:
+                  - generic: "+387"
+                  - generic: 波斯尼亚和黑塞哥维那
+                - generic:
+                  - generic: "+1767"
+                  - generic: 多米尼克
+                - generic:
+                  - generic: "+1869"
+                  - generic: 圣基茨和尼维斯
+                - generic:
+                  - generic: "+385"
+                  - generic: 克罗地亚
+                - generic:
+                  - generic: "+1684"
+                  - generic: 美属萨摩亚
+                - generic:
+                  - generic: "+975"
+                  - generic: 不丹
+                - generic:
+                  - generic: "+500"
+                  - generic: 法兰克岛
+                - generic:
+                  - generic: "+692"
+                  - generic: 马绍尔群岛
+                - generic:
+                  - generic: "+250"
+                  - generic: 卢旺达
+                - generic:
+                  - generic: "+1649"
+                  - generic: 特克斯和凯科斯群岛
+                - generic:
+                  - generic: "+1721"
+                  - generic: 荷属圣马丁
+                - generic:
+                  - generic: "+1876"
+                  - generic: 牙买加
+                - generic:
+                  - generic: "+996"
+                  - generic: 吉尔吉斯斯坦
+                - generic:
+                  - generic: "+965"
+                  - generic: 科威特
+                - generic:
+                  - generic: "+297"
+                  - generic: 阿鲁巴
+                - generic:
+                  - generic: "+299"
+                  - generic: 格陵兰
+                - generic:
+                  - generic: "+244"
+                  - generic: 安哥拉
+                - generic:
+                  - generic: "+247"
+                  - generic: 阿森松岛
+                - generic:
+                  - generic: "+238"
+                  - generic: 佛得角
+                - generic:
+                  - generic: "+383"
+                  - generic: 科索沃共和国
+                - generic:
+                  - generic: "+381"
+                  - generic: 塞尔维亚
+                - generic:
+                  - generic: "+269"
+                  - generic: 马约特
+                - generic:
+                  - generic: "+222"
+                  - generic: 毛里塔尼亚
+                - generic:
+                  - generic: "+681"
+                  - generic: 瓦利斯和富图纳群岛
+                - generic:
+                  - generic: "+687"
+                  - generic: 新喀里多尼亚
+                - generic:
+                  - generic: "+691"
+                  - generic: 密克罗尼西亚
+                - generic:
+                  - generic: "+298"
+                  - generic: 法罗群岛
+                - generic:
+                  - generic: "+389"
+                  - generic: 马其顿
+                - generic:
+                  - generic: "+1340"
+                  - generic: 美属维尔京群岛
+                - generic:
+                  - generic: "+291"
+                  - generic: 厄立特里亚
+                - generic:
+                  - generic: "+508"
+                  - generic: 圣皮埃尔和密克隆
+                - generic:
+                  - generic: "+670"
+                  - generic: 东帝汶
+                - generic:
+                  - generic: "+590"
+                  - generic: 瓜德罗普岛
+                - generic:
+                  - generic: "+211"
+                  - generic: 南苏丹
+                - generic:
+                  - generic: "+678"
+                  - generic: 瓦努阿图
+                - generic:
+                  - generic: "+382"
+                  - generic: 黑山共和国
+                - generic:
+                  - generic: "+596"
+                  - generic: 马丁尼克
+                - generic:
+                  - generic: "+245"
+                  - generic: 几内亚比绍共和国
+                - generic:
+                  - generic: "+962"
+                  - generic: 约旦
+          - textbox "请输入手机号码" [ref=e17]
+        - textbox "请输入登录密码" [ref=e20]
+      - generic [ref=e21]:
+        - paragraph [ref=e22] [cursor=pointer]:
+          - text: 登录http协同开发平台 2017将获得以下权限
+          - generic [ref=e23]: 
+        - generic [ref=e24]:
+          - text: 我同意
+          - link "《" [ref=e26] [cursor=pointer]:
+            - /url: javascript:void(0);
+          - link "金蝶中国用户使用协议" [ref=e27] [cursor=pointer]:
+            - /url: https://account.kdcloud.com/privacy?id=3515726087781072896
+          - link "》" [ref=e28] [cursor=pointer]:
+            - /url: javascript:void(0);
+          - text: 和
+          - link "《" [ref=e29] [cursor=pointer]:
+            - /url: javascript:void(0);
+          - link "金蝶中国隐私政策" [ref=e30] [cursor=pointer]:
+            - /url: https://account.kdcloud.com/privacy?id=3515729708820185088
+          - link "》" [ref=e31] [cursor=pointer]:
+            - /url: javascript:void(0);
+      - generic [ref=e32]: 忘记密码
+      - button "授权并登录" [disabled] [ref=e34]
+      - generic [ref=e35]:
+        - generic [ref=e37] [cursor=pointer]: 短信登录
+        - generic [ref=e39] [cursor=pointer]: 邮箱登录
+      - generic [ref=e43]:
+        - generic "云之家登录" [ref=e45] [cursor=pointer]
+        - generic "微信登录" [ref=e47] [cursor=pointer]
+        - generic "QQ登录" [ref=e49] [cursor=pointer]
+        - generic "钉钉登录" [ref=e51] [cursor=pointer]
+  - generic [ref=e52]:
+    - paragraph [ref=e53]:
+      - link "用户协议" [ref=e54] [cursor=pointer]:
+        - /url: https://account.kdcloud.com/privacy?id=3515726087781072896
+      - text: "|"
+      - link "隐私政策" [ref=e55] [cursor=pointer]:
+        - /url: https://account.kdcloud.com/privacy?id=3515729708820185088
+    - paragraph [ref=e56]:
+      - link "粤ICP备05041751号" [ref=e59] [cursor=pointer]:
+        - /url: https://beian.miit.gov.cn
+      - link "粤公网安备 44030502002324号" [ref=e60] [cursor=pointer]:
+        - /url: http://www.beian.gov.cn
