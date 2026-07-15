@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+      金蝶服务器 121.37.216.69 使用自签名/IP 地址证书，Android 默认不信任。
+      此配置用于内网/测试环境，允许以下两种方式连通：
+      1) 金蝶若支持 HTTP，直接走明文通信
+      2) 金蝶仅支持 HTTPS 时，用户可在手机设置中手动安装服务器证书，
+         本配置信任用户安装的证书（src="user"）
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">121.37.216.69</domain>
+        <trust-anchors>
+            <certificates src="system"/>
+            <certificates src="user"/>
+        </trust-anchors>
+    </domain-config>
+</network-security-config>

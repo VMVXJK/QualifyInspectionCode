@@ -1,0 +1,9 @@
+@import 'tailwindcss';
+@import 'uniwind';
+
+@layer base {
+  body {
+    background-color: #fafafa;
+    color: #1e293b;
+  }
+}
