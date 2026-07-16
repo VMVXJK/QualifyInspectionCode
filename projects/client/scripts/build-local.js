@@ -20,12 +20,12 @@ const fs = require('fs');
 
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const BUILD_ROOT = 'C:/app/QI';
-const RESULT_DIR = 'D:/Java/work/QualifyInspectionCode-prod';
+const RESULT_DIR = path.resolve(__dirname, '../../Result');
 
-const JAVA_HOME = 'D:/Java/jdk-17';
-const ANDROID_HOME = 'D:/Java/android-sdk';
-const GRADLE_HOME = 'C:/app/gradle-home';
-const TMP_DIR = 'C:/app/tmp';
+const JAVA_HOME = 'C:/app/Programtools/jdk';
+const ANDROID_HOME = 'C:/app/Programtools/android-sdk';
+const GRADLE_HOME = 'C:/app/Programtools/gradle-home';
+const TMP_DIR = 'C:/app/Programtools/tmp';
 
 // ═══════════════════════════════════════════════════════════════
 // 工具函数

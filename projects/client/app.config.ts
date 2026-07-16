@@ -5,7 +5,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     ...config,
     "name": "QualifyInspection",
     "slug": "quality-inspection",
-    "version": "1.3.6",
+    "version": "1.5.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",

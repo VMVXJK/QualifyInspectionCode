@@ -357,11 +357,15 @@ export default function OrderDetailScreen() {
           )}
         </Section>
 
-        {/* 底部提交 */}
+        {/* 底部按钮 */}
         <View style={styles.footer}>
           <TouchableOpacity style={styles.submitBtn} onPress={form.handleSubmit} activeOpacity={0.85}>
             <Ionicons name="save-outline" size={20} color="#FFFFFF" />
             <Text style={styles.submitBtnText}>保存检验结果</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.workflowBtn} onPress={form.handleWorkflowSubmit} activeOpacity={0.85}>
+            <Ionicons name="checkmark-circle-outline" size={20} color="#FFFFFF" />
+            <Text style={styles.workflowBtnText}>提交单据</Text>
           </TouchableOpacity>
         </View>
 
@@ -488,7 +492,7 @@ const styles = StyleSheet.create({
   qtyText: { fontSize: 13, color: '#1E293B' },
 
   /* Footer */
-  footer: { marginHorizontal: PAD, marginTop: 20, marginBottom: 10 },
+  footer: { marginHorizontal: PAD, marginTop: 20, marginBottom: 10, gap: 10 },
   submitBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -499,4 +503,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   submitBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  workflowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#059669',
+    borderRadius: 12,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  workflowBtnText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
 });

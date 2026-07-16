@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { submitInspectionResult } from '@/api/kingdee/inspect';
+import { submitInspectionResult, submitInspectBill } from '@/api/kingdee/inspect';
 import { autoJudge } from '@/api/kingdee/utils';
 import { showSuccess, showError } from '@/utils/toast';
 import { showConfirm } from '@/utils/alert';
@@ -34,6 +34,7 @@ interface UseInspectionFormResult {
   saveDefect: (defect: LocalDefect) => boolean;
   removeDefect: (detailId?: string) => void;
   handleSubmit: () => Promise<void>;
+  handleWorkflowSubmit: () => Promise<void>;
   defects: LocalDefect[];
 }
 
@@ -232,6 +233,24 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     }
   }, [order, material, items, defects, editingDecisions, editingItems, rawBill, fetchDetail]);
 
+  const handleWorkflowSubmit = useCallback(async () => {
+    if (!order?.order_no) {
+      showError('单据编号不存在，无法提交');
+      return;
+    }
+    const ok = await showConfirm('确认提交', '提交后单据将进入审核流程，是否继续？');
+    if (!ok) return;
+
+    try {
+      await submitInspectBill([order.order_no]);
+      showSuccess('单据提交成功');
+      fetchDetail();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '单据提交失败';
+      showError(message);
+    }
+  }, [order, fetchDetail]);
+
   return {
     editingItems,
     editingMethods,
@@ -251,6 +270,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     saveDefect,
     removeDefect,
     handleSubmit,
+    handleWorkflowSubmit,
     defects,
   };
 }
