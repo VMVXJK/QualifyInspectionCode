@@ -145,6 +145,17 @@ export function resolveBaseData(val: unknown): { number?: string; name?: string 
       (typeof nameObj['en-US'] === 'string' ? nameObj['en-US'] : undefined);
   }
 
+  // 处理多语言 Name 数组（View 接口实测格式：[{ Key: 2052, Value: "中文名" }, { Key: 1033, Value: "English" }]）
+  // 2052 = 简体中文 LCID，优先取该项；取不到则回退第一项
+  if (!name && Array.isArray(obj.Name)) {
+    const nameArr = obj.Name as Array<Record<string, unknown>>;
+    const zhEntry = nameArr.find((it) => it && (it.Key === 2052 || it.Key === '2052'));
+    const entry = zhEntry ?? nameArr[0];
+    if (entry && typeof entry.Value === 'string') {
+      name = entry.Value;
+    }
+  }
+
   return { number, name };
 }
 

@@ -256,6 +256,7 @@ export interface OrderSummary {
   // 分录物料信息（BillQuery 分录字段）
   material_code?: string;
   material_name?: string;
+  material_count?: number; // 单据体分录（物料）总数，用于列表页展示"等N种"
   // 组织信息（View API）
   inspect_org_name?: string;
   source_org_name?: string;

@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from 'expo-router';
-import { viewInspectBill, convertBillToLocal } from '@/api/kingdee/inspect';
+import { viewInspectBill, convertBillToLocal, fetchMaterialInfoByBillId } from '@/api/kingdee/inspect';
 import { getKingdeeSessionCookie } from '@/api/kingdee/client';
 import { showError } from '@/utils/toast';
 import { BILL_DETAIL_CACHE_KEY } from '../constants';
@@ -98,6 +98,22 @@ export function useBillDetail(orderId?: string, orderNo?: string): UseBillDetail
       setDecisions(local.decisions as LocalDecision[]);
       setItems(local.items as LocalItem[]);
       setDefects(local.defects as LocalDefect[]);
+
+      // View 接口在部分环境下不带出分录物料的 FName（取决于金蝶后台字段关联配置），
+      // 此时用 BillQuery 按单据内码补一次查询兜底
+      if (local.material && !local.material.material_name && local.order.id) {
+        fetchMaterialInfoByBillId(local.order.id)
+          .then((info) => {
+            if (info?.material_name) {
+              setMaterial((prev) =>
+                prev ? { ...prev, material_name: info.material_name || prev.material_name, material_code: prev.material_code || info.material_code || '' } : prev
+              );
+            }
+          })
+          .catch(() => {
+            /* 兜底查询失败静默忽略，不影响主流程 */
+          });
+      }
 
       try {
         await AsyncStorage.setItem(

@@ -54,12 +54,15 @@ const FORM_ID = 'QM_InspectBill';
  * - FDate              单据日期
  * - FBILLTYPEID.FNumber 单据类型编码（基础资料取编码，避免返回对象）
  * - FDocumentStatus    单据状态 (Z=创建, A=审核中, B=已审核, C=重新审核)
+ * - FMaterialId.FNumber/FName 分录物料编码/名称（单据体字段，直接用字段名.关联字段即可，无需 FEntity_ 前缀）
  *
  * 注意：
  * 1. BillQuery 返回的是对象数组 [{ FID: ..., FBILLNO: ... }, ...]，
  *    键名与 FieldKeys 完全一致（包括带点号的复合字段）。
- * 2. 基础资料字段不要超过 30 个（含多语言字段），当前 5 个字段安全。
+ * 2. 基础资料字段不要超过 30 个（含多语言字段），当前 7 个字段安全。
  * 3. 查询一定要有查询条件并限定取数范围，防止接口超时。
+ * 4. FMaterialId 是单据体（分录）字段，BillQuery 会按分录展开返回，
+ *    同一张单据有多个分录时会对应多行——解析时按 FID 去重，只取首个分录的物料信息。
  */
 const LIST_FIELD_KEYS = [
   'FID',
@@ -68,6 +71,8 @@ const LIST_FIELD_KEYS = [
   'FBILLTYPEID.FNumber',
   'FBILLTYPEID.FName',
   'FDocumentStatus',
+  'FMaterialId.FNumber',
+  'FMaterialId.FName',
 ].join(',');
 
 /**
@@ -261,14 +266,23 @@ export async function queryInspectBills(params?: {
   }
 
   // 解析二维数组 → OrderSummary
-  const rows: OrderSummary[] = rowsRaw!.map((row, idx) => {
+  // 注意：FMaterialId 是单据体（分录）字段，一张单据有多个物料分录时 BillQuery 会展开成多行
+  // （主表字段如 FID/FBILLNO 重复，物料字段不同），这里按 FID 聚合，只保留首个分录的物料信息，
+  // 同时统计分录行数（material_count），供列表卡片展示"等N种"。
+  const orderMap = new Map<string, OrderSummary>();
+  const materialCountMap = new Map<string, number>();
+  for (const row of rowsRaw!) {
     if (!Array.isArray(row)) {
-      throw new Error(`查询检验单失败：第 ${idx} 行格式异常（非数组）`);
+      throw new Error('查询检验单失败：行格式异常（非数组）');
     }
+    const id = String(row[0] ?? '');
+    materialCountMap.set(id, (materialCountMap.get(id) ?? 0) + 1);
+    if (orderMap.has(id)) continue;
+
     const typeId = String(row[3] ?? '');
     const typeNameFromKd = String(row[4] ?? '');
-    return {
-      id: String(row[0] ?? ''),
+    orderMap.set(id, {
+      id,
       order_no: String(row[1] ?? ''),
       date: String(row[2] ?? ''),
       type_id: typeId,
@@ -276,8 +290,15 @@ export async function queryInspectBills(params?: {
       document_status: String(row[5] ?? ''),
       status: mapDocumentStatus(String(row[5] ?? '')),
       type: typeNameFromKd || mapBillTypeName(typeId),
-    };
-  });
+      material_code: row[6] ? String(row[6]) : undefined,
+      material_name: row[7] ? String(row[7]) : undefined,
+    });
+  }
+
+  const rows: OrderSummary[] = [...orderMap.values()].map((o) => ({
+    ...o,
+    material_count: materialCountMap.get(o.id) ?? 1,
+  }));
 
   return { total: rows.length, rows };
 }
@@ -362,6 +383,57 @@ export async function viewInspectBill(
 
   const result = await callKingdeePost<unknown>('View', requestBody);
   return extractViewResult<InspectBill>(result);
+}
+
+/**
+ * 兜底查询：按单据内码从 BillQuery 补查物料编码/名称
+ *
+ * 背景：View 接口是否带出分录物料的 FName 取决于金蝶后台该单据体字段的
+ * 关联属性配置，部分环境下只返回内码；而 BillQuery 支持显式指定
+ * FMaterialId.FNumber/FName，取数更可靠。详情页解析后若物料名称为空，
+ * 用此函数按 FID 单独补一次查询。
+ */
+export async function fetchMaterialInfoByBillId(
+  billId: string
+): Promise<{ material_code?: string; material_name?: string } | undefined> {
+  if (!billId) return undefined;
+
+  const requestBody = {
+    data: {
+      FormId: FORM_ID,
+      FieldKeys: 'FMaterialId.FNumber,FMaterialId.FName',
+      FilterString: `FID = ${Number(billId)}`,
+      OrderString: '',
+      StartRow: 0,
+      Limit: 1,
+    },
+  };
+
+  let result: unknown;
+  try {
+    result = await callKingdeePost<unknown>('BillQuery', requestBody);
+  } catch {
+    return undefined;
+  }
+
+  const rows = parseBillQueryRows(result);
+  const first = rows[0];
+  if (!first) return undefined;
+
+  if (Array.isArray(first)) {
+    return {
+      material_code: first[0] ? String(first[0]) : undefined,
+      material_name: first[1] ? String(first[1]) : undefined,
+    };
+  }
+  if (typeof first === 'object') {
+    const rec = first as Record<string, unknown>;
+    return {
+      material_code: rec['FMaterialId.FNumber'] ? String(rec['FMaterialId.FNumber']) : undefined,
+      material_name: rec['FMaterialId.FName'] ? String(rec['FMaterialId.FName']) : undefined,
+    };
+  }
+  return undefined;
 }
 
 /**

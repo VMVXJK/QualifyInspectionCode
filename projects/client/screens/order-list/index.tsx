@@ -43,6 +43,7 @@ interface InspectionOrder {
   document_status: string;
   material_code?: string;
   material_name?: string;
+  material_count?: number;
 }
 
 const TYPE_MAP: Record<string, { label: string; color: string }> = {
@@ -117,6 +118,7 @@ export default function OrderListScreen() {
         document_status: r.document_status,
         material_code: r.material_code,
         material_name: r.material_name,
+        material_count: r.material_count,
       }));
 
       setOrders(mapped);
@@ -221,13 +223,16 @@ export default function OrderListScreen() {
         <View style={styles.cardBody}>
           <View style={styles.cardTop}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.cardNo}>{item.order_no}</Text>
-              {(item.material_code || item.material_name) ? (
-                <Text style={styles.cardMaterial} numberOfLines={1}>
-                  {item.material_code ? `${item.material_code} ` : ''}
-                  {item.material_name || ''}
-                </Text>
-              ) : null}
+              <Text style={styles.cardNo} numberOfLines={1}>
+                {item.order_no}
+                {item.material_name ? (
+                  <Text style={styles.cardMaterialInline}>
+                    {'  ·  '}
+                    {item.material_name}
+                    {(item.material_count ?? 1) > 1 ? ` 等${item.material_count}种` : ''}
+                  </Text>
+                ) : null}
+              </Text>
             </View>
             <View style={[styles.pill, { backgroundColor: status.bg }]}>
               <Text style={[styles.pillText, { color: status.color }]}>{status.label}</Text>
@@ -660,7 +665,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   cardNo: { fontSize: 15, fontWeight: '700', color: '#1E293B' },
-  cardMaterial: { fontSize: 13, color: '#64748B', marginTop: 2 },
+  cardMaterialInline: { fontSize: 13, fontWeight: '400', color: '#64748B' },
   pill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   pillText: { fontSize: 11, fontWeight: '700' },
   cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10 },
