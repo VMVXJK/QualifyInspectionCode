@@ -2042,15 +2042,23 @@ export async function submitInspectionResult(params: {
 
 /** 提交单据 */
 export async function submitInspectBill(numbers: string[], orgId?: number) {
-  const param: SubmitParam = {
-    CreateOrgId: orgId ?? 0,
-    Numbers: numbers,
+  const requestBody = {
+    formid: FORM_ID,
+    data: {
+      CreateOrgId: orgId ?? 0,
+      Numbers: numbers,
+      Ids: '',
+      IgnoreInterationFlag: '',
+      NetworkCtrl: '',
+      SelectedPostId: 0,
+      UseOrgId: 0,
+    },
   };
 
-  const result = await callKingdee<{
+  const result = await callKingdeePost<{
     Result: { ResponseStatus: KingdeeResponseStatus };
     ResponseStatus: KingdeeResponseStatus;
-  }>('Submit', [FORM_ID, toKdJson(param)]);
+  }>('Submit', requestBody);
 
   const status = result.Result?.ResponseStatus ?? result.ResponseStatus;
   if (!status.IsSuccess) {
