@@ -31,7 +31,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ title: "登录" }} />
           <Stack.Screen name="order-detail" options={{ title: "检验单详情" }} />
           <Stack.Screen name="settings" options={{ title: "系统设置" }} />
-          <Stack.Screen name="login-history" options={{ title: "登录记录" }} />
+          <Stack.Screen name="login-history" options={{ title: "查询记录" }} />
           <Stack.Screen name="debug-response" options={{ title: "调试响应" }} />
         </Stack>
         <Toast />

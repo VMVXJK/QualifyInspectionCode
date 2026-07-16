@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loginBySign, logoutKingdee, validateUser } from '@/api/kingdee/auth';
 import { clearKingdeeSession } from '@/api/kingdee/client';
+import { recordHistory } from '@/utils/operationHistory';
 import type { KingdeeLoginResult } from '@/api/kingdee/types';
 
 interface UserOut {
@@ -37,21 +38,10 @@ const USER_KEY = 'auth_user';
 const LOGIN_RESULT_KEY = 'auth_kingdee_result';
 const REMEMBERED_USERNAME_KEY = 'auth_remembered_username';
 const REMEMBERED_PASSWORD_KEY = 'auth_remembered_password';
-const LOGIN_HISTORY_KEY = 'auth_login_history';
 
 /** 记录登录历史（只保存用户名和时间，不保存密码） */
 async function recordLoginHistory(username: string) {
-  try {
-    const historyJson = await AsyncStorage.getItem(LOGIN_HISTORY_KEY);
-    const history: { username: string; time: string }[] = historyJson ? JSON.parse(historyJson) : [];
-    // 插入到最前面
-    history.unshift({ username, time: new Date().toISOString() });
-    // 最多保留 50 条
-    if (history.length > 50) history.pop();
-    await AsyncStorage.setItem(LOGIN_HISTORY_KEY, JSON.stringify(history));
-  } catch {
-    // 忽略记录错误
-  }
+  await recordHistory('login', { username, time: new Date().toISOString() });
 }
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {

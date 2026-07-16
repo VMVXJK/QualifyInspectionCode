@@ -1,22 +1,74 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  TextInput,
 } from 'react-native';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
+import { getKingdeeBaseUrl, setKingdeeBaseUrl, DEFAULT_KINGDEE_BASE_URL } from '@/api/kingdee/client';
+import { showSuccess, showError } from '@/utils/toast';
 
-/** 金蝶云星空服务器地址 */
-const KINGDEE_SERVER = 'https://121.37.216.69';
+/** 从完整地址中提取纯 host（去掉协议前缀），供输入框展示 */
+function stripProtocol(url: string): string {
+  return url.replace(/^https?:\/\//, '');
+}
+
+const DEFAULT_HOST = stripProtocol(DEFAULT_KINGDEE_BASE_URL);
 
 export default function SettingsScreen() {
   const router = useSafeRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
+
+  const [host, setHost] = useState(DEFAULT_HOST);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setHost(stripProtocol(getKingdeeBaseUrl()));
+  }, []);
+
+  const handleSaveServer = async () => {
+    const trimmed = host.trim();
+    if (!trimmed) {
+      setErrorMsg('请输入服务器地址');
+      return;
+    }
+    if (/\s/.test(trimmed)) {
+      setErrorMsg('服务器地址不能包含空格');
+      return;
+    }
+
+    setErrorMsg('');
+    setSaving(true);
+    try {
+      const fullUrl = /^https?:\/\//.test(trimmed) ? trimmed : `https://${trimmed}`;
+      await setKingdeeBaseUrl(fullUrl);
+      setHost(stripProtocol(fullUrl));
+
+      if (isAuthenticated) {
+        await logout();
+        showSuccess('服务器地址已更新，请重新登录');
+      } else {
+        showSuccess('服务器地址已更新');
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保存失败';
+      showError(message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleResetServer = () => {
+    setHost(DEFAULT_HOST);
+    setErrorMsg('');
+  };
 
   return (
     <Screen>
@@ -49,12 +101,48 @@ export default function SettingsScreen() {
             </View>
           </View>
 
-          {/* 金蝶服务器地址（只读） */}
+          {/* 金蝶服务器地址（可编辑） */}
           <View style={styles.card}>
             <Text style={styles.cardTitle}>金蝶服务器地址</Text>
-            <View style={styles.readonlyBox}>
+            <View style={styles.inputBox}>
               <Ionicons name="server-outline" size={18} color="#2563EB" />
-              <Text style={styles.readonlyUrl}>{KINGDEE_SERVER}</Text>
+              <TextInput
+                style={styles.inputField}
+                value={host}
+                onChangeText={(v) => {
+                  setHost(v);
+                  if (errorMsg) setErrorMsg('');
+                }}
+                placeholder={DEFAULT_HOST}
+                placeholderTextColor="#94A3B8"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+              />
+            </View>
+            {errorMsg ? (
+              <View style={styles.errorBox}>
+                <Ionicons name="alert-circle" size={14} color="#DC2626" />
+                <Text style={styles.errorText}>{errorMsg}</Text>
+              </View>
+            ) : null}
+            <Text style={styles.hintText}>修改后需要重新登录才能生效</Text>
+            <View style={styles.serverActions}>
+              <TouchableOpacity
+                style={styles.resetBtn}
+                onPress={handleResetServer}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.resetBtnText}>重置为默认</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+                onPress={handleSaveServer}
+                activeOpacity={0.85}
+                disabled={saving}
+              >
+                <Text style={styles.saveBtnText}>{saving ? '保存中…' : '保存'}</Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -71,7 +159,7 @@ export default function SettingsScreen() {
                 </View>
                 <View>
                   <Text style={styles.actionTitle}>查询记录</Text>
-                  <Text style={styles.actionSub}>查看登录过的账号记录</Text>
+                  <Text style={styles.actionSub}>查看登录、保存、提交记录</Text>
                 </View>
               </View>
               <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
@@ -180,22 +268,69 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#374151',
   },
-  readonlyBox: {
+  inputBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#F8FAFC',
     borderRadius: 10,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 4,
     gap: 10,
     borderWidth: 1.5,
-    borderColor: '#DBEAFE',
+    borderColor: '#E2E8F0',
   },
-  readonlyUrl: {
+  inputField: {
     flex: 1,
     fontSize: 14,
     color: '#1E293B',
     fontWeight: '500',
+    paddingVertical: 10,
+  },
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  hintText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    marginTop: 8,
+  },
+  serverActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+    marginTop: 14,
+  },
+  resetBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  resetBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748B',
+  },
+  saveBtn: {
+    paddingHorizontal: 18,
+    paddingVertical: 9,
+    borderRadius: 8,
+    backgroundColor: '#2563EB',
+  },
+  saveBtnDisabled: {
+    opacity: 0.6,
+  },
+  saveBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   actionRow: {
     flexDirection: 'row',

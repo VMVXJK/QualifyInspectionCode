@@ -9,7 +9,7 @@
  */
 
 import {
-  KINGDEE_BASE_URL,
+  getKingdeeBaseUrl,
   fetchWithTimeout,
   setKingdeeSessionCookie,
   clearKingdeeSession,
@@ -21,11 +21,15 @@ import {
 import * as Crypto from 'expo-crypto';
 import type { KingdeeLoginResult } from './types';
 
-/** 金蝶云星空登录地址 */
-const LOGIN_URL = `${KINGDEE_BASE_URL}/K3Cloud/Kingdee.BOS.WebApi.ServicesStub.AuthService.LoginBySign.common.kdsvc`;
+/** 金蝶云星空登录地址（运行时读取，服务器地址可在系统设置中修改） */
+function getLoginUrl(): string {
+  return `${getKingdeeBaseUrl()}/K3Cloud/Kingdee.BOS.WebApi.ServicesStub.AuthService.LoginBySign.common.kdsvc`;
+}
 
-/** 金蝶云星空账号密码验证地址 */
-const VALIDATE_USER_URL = `${KINGDEE_BASE_URL}/K3Cloud/Kingdee.BOS.WebApi.ServicesStub.AuthService.ValidateUser.common.kdsvc`;
+/** 金蝶云星空账号密码验证地址（运行时读取） */
+function getValidateUserUrl(): string {
+  return `${getKingdeeBaseUrl()}/K3Cloud/Kingdee.BOS.WebApi.ServicesStub.AuthService.ValidateUser.common.kdsvc`;
+}
 
 /** 固定登录配置 */
 const ACCT_ID = '6a015236279e5b';
@@ -84,7 +88,7 @@ export async function loginBySign(username?: string): Promise<KingdeeLoginResult
 
   let res: Response;
   try {
-    res = await fetchWithTimeout(LOGIN_URL, {
+    res = await fetchWithTimeout(getLoginUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json;charset=UTF-8' },
       body: JSON.stringify({ parameters: params }),
@@ -153,7 +157,7 @@ export async function validateUser(username: string, password: string): Promise<
 
   let res: Response;
   try {
-    res = await fetchWithTimeout(VALIDATE_USER_URL, {
+    res = await fetchWithTimeout(getValidateUserUrl(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json;charset=UTF-8' },
       body: JSON.stringify({ parameters: params }),

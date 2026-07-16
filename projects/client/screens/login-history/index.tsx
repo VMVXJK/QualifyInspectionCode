@@ -6,18 +6,23 @@ import {
   TouchableOpacity,
   FlatList,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+import { loadHistory, type HistoryKind, type OperationHistoryItem } from '@/utils/operationHistory';
 
-const LOGIN_HISTORY_KEY = 'auth_login_history';
+const TABS: { key: HistoryKind; label: string }[] = [
+  { key: 'login', label: '登录' },
+  { key: 'save', label: '保存' },
+  { key: 'submit', label: '提交' },
+];
 
-interface LoginHistoryItem {
-  username: string;
-  time: string;
-}
+const EMPTY_TEXT: Record<HistoryKind, { title: string; sub: string }> = {
+  login: { title: '暂无登录记录', sub: '登录成功后，账号记录将显示在此处' },
+  save: { title: '暂无保存记录', sub: '保存检验结果后，记录将显示在此处' },
+  submit: { title: '暂无提交记录', sub: '提交单据后，记录将显示在此处' },
+};
 
 function formatTime(isoString: string): string {
   try {
@@ -36,47 +41,82 @@ function formatTime(isoString: string): string {
 
 export default function LoginHistoryScreen() {
   const router = useSafeRouter();
-  const [history, setHistory] = useState<LoginHistoryItem[]>([]);
+  const [activeTab, setActiveTab] = useState<HistoryKind>('login');
+  const [history, setHistory] = useState<OperationHistoryItem[]>([]);
 
-  const loadHistory = useCallback(async () => {
-    try {
-      const json = await AsyncStorage.getItem(LOGIN_HISTORY_KEY);
-      if (json) {
-        setHistory(JSON.parse(json));
-      } else {
-        setHistory([]);
-      }
-    } catch {
-      setHistory([]);
-    }
+  const load = useCallback(async (kind: HistoryKind) => {
+    const data = await loadHistory(kind);
+    setHistory(data);
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadHistory();
-    }, [loadHistory])
+      load(activeTab);
+    }, [load, activeTab])
   );
 
-  const renderItem = ({ item, index }: { item: LoginHistoryItem; index: number }) => (
-    <View style={styles.row}>
-      <View style={styles.rowLeft}>
-        <View style={styles.numberBadge}>
-          <Text style={styles.numberText}>{index + 1}</Text>
+  const handleTabPress = (kind: HistoryKind) => {
+    setActiveTab(kind);
+    load(kind);
+  };
+
+  const renderItem = ({ item, index }: { item: OperationHistoryItem; index: number }) => {
+    if (item.kind === 'login') {
+      return (
+        <View style={styles.row}>
+          <View style={styles.rowLeft}>
+            <View style={styles.numberBadge}>
+              <Text style={styles.numberText}>{index + 1}</Text>
+            </View>
+            <View>
+              <Text style={styles.username}>{item.username}</Text>
+              <Text style={styles.time}>{formatTime(item.time)}</Text>
+            </View>
+          </View>
+          <Ionicons name="person-outline" size={18} color="#CBD5E1" />
         </View>
-        <View>
-          <Text style={styles.username}>{item.username}</Text>
-          <Text style={styles.time}>{formatTime(item.time)}</Text>
+      );
+    }
+
+    const isSuccess = item.success !== false;
+    return (
+      <View style={styles.row}>
+        <View style={styles.rowLeft}>
+          <View
+            style={[
+              styles.numberBadge,
+              { backgroundColor: isSuccess ? '#ECFDF5' : '#FEF2F2' },
+            ]}
+          >
+            <Text style={[styles.numberText, { color: isSuccess ? '#059669' : '#DC2626' }]}>
+              {index + 1}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.username}>{item.orderNo || '未知单据'}</Text>
+            <Text style={styles.time}>{formatTime(item.time)}</Text>
+            {!isSuccess && item.detail ? (
+              <Text style={styles.detailText} numberOfLines={2}>
+                {item.detail}
+              </Text>
+            ) : null}
+          </View>
         </View>
+        <Ionicons
+          name={isSuccess ? 'checkmark-circle' : 'close-circle'}
+          size={20}
+          color={isSuccess ? '#10B981' : '#EF4444'}
+        />
       </View>
-      <Ionicons name="person-outline" size={18} color="#CBD5E1" />
-    </View>
-  );
+    );
+  };
 
+  const emptyText = EMPTY_TEXT[activeTab];
   const renderEmpty = () => (
     <View style={styles.emptyBox}>
       <Ionicons name="document-text-outline" size={48} color="#CBD5E1" />
-      <Text style={styles.emptyTitle}>暂无登录记录</Text>
-      <Text style={styles.emptySub}>登录成功后，账号记录将显示在此处</Text>
+      <Text style={styles.emptyTitle}>{emptyText.title}</Text>
+      <Text style={styles.emptySub}>{emptyText.sub}</Text>
     </View>
   );
 
@@ -89,14 +129,29 @@ export default function LoginHistoryScreen() {
             <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>登录记录</Text>
+            <Text style={styles.headerTitle}>查询记录</Text>
             <View style={{ width: 24 }} />
           </View>
         </View>
 
+        {/* 分类 Tab */}
+        <View style={styles.tabBar}>
+          {TABS.map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={[styles.tabChip, activeTab === tab.key && styles.tabChipOn]}
+              onPress={() => handleTabPress(tab.key)}
+            >
+              <Text style={[styles.tabChipText, activeTab === tab.key && styles.tabChipTextOn]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <FlatList
           data={history}
-          keyExtractor={(item, index) => `${item.username}-${item.time}-${index}`}
+          keyExtractor={(item, index) => `${item.kind}-${item.time}-${index}`}
           renderItem={renderItem}
           ListEmptyComponent={renderEmpty}
           contentContainerStyle={styles.listContent}
@@ -138,6 +193,24 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  tabChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+  },
+  tabChipOn: { backgroundColor: '#2563EB' },
+  tabChipText: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  tabChipTextOn: { color: '#FFFFFF', fontWeight: '600' },
   listContent: {
     padding: 16,
     paddingBottom: 32,
@@ -158,6 +231,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flex: 1,
   },
   numberBadge: {
     width: 28,
@@ -181,6 +255,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     marginTop: 2,
+  },
+  detailText: {
+    fontSize: 12,
+    color: '#DC2626',
+    marginTop: 4,
   },
   emptyBox: {
     alignItems: 'center',

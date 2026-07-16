@@ -3,6 +3,7 @@ import { submitInspectionResult, submitInspectBill } from '@/api/kingdee/inspect
 import { autoJudge } from '@/api/kingdee/utils';
 import { showSuccess, showError } from '@/utils/toast';
 import { showConfirm } from '@/utils/alert';
+import { recordHistory } from '@/utils/operationHistory';
 import type { LocalItem, LocalDefect, LocalDecision, LocalMaterial, LocalOrder, SaveDiagnostics } from '../types';
 
 interface UseInspectionFormParams {
@@ -223,13 +224,31 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
 
       if (result.success) {
         showSuccess('检验结果已保存');
+        recordHistory('save', {
+          time: new Date().toISOString(),
+          orderNo: order.order_no,
+          success: true,
+        });
         fetchDetail();
       } else {
-        showError(result.diagnostics.error || '保存失败');
+        const errorMsg = result.diagnostics.error || '保存失败';
+        showError(errorMsg);
+        recordHistory('save', {
+          time: new Date().toISOString(),
+          orderNo: order.order_no,
+          success: false,
+          detail: errorMsg,
+        });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : '提交失败';
       showError(message);
+      recordHistory('save', {
+        time: new Date().toISOString(),
+        orderNo: order.order_no,
+        success: false,
+        detail: message,
+      });
     }
   }, [order, material, items, defects, editingDecisions, editingItems, rawBill, fetchDetail]);
 
@@ -244,10 +263,21 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     try {
       await submitInspectBill([order.order_no]);
       showSuccess('单据提交成功');
+      recordHistory('submit', {
+        time: new Date().toISOString(),
+        orderNo: order.order_no,
+        success: true,
+      });
       fetchDetail();
     } catch (error) {
       const message = error instanceof Error ? error.message : '单据提交失败';
       showError(message);
+      recordHistory('submit', {
+        time: new Date().toISOString(),
+        orderNo: order.order_no,
+        success: false,
+        detail: message,
+      });
     }
   }, [order, fetchDetail]);
 

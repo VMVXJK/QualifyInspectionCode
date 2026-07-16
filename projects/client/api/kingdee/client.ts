@@ -3,14 +3,42 @@
  *
  * 特点：
  * - 管理 Cookie 会话（金蝶登录后通过 Cookie 保持会话，默认 20 分钟）
- * - 统一 URL 前缀拼接（固定服务器地址）
+ * - 统一 URL 前缀拼接（服务器地址可在系统设置中修改，持久化到 AsyncStorage）
  * - 请求超时控制
  * - 响应状态码和 MsgCode 解析
  * - 自动识别会话丢失（MsgCode === 1）并抛出特定错误
  */
 
-/** 金蝶云星空服务器地址 */
-export const KINGDEE_BASE_URL = 'https://121.37.216.69';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/** 金蝶云星空默认服务器地址（用户未自定义时使用） */
+export const DEFAULT_KINGDEE_BASE_URL = 'https://121.37.216.69';
+
+const KINGDEE_BASE_URL_STORAGE_KEY = 'kingdee_base_url';
+
+let kingdeeBaseUrl: string = DEFAULT_KINGDEE_BASE_URL;
+
+/** 获取当前生效的金蝶服务器地址 */
+export function getKingdeeBaseUrl(): string {
+  return kingdeeBaseUrl;
+}
+
+/** 设置金蝶服务器地址（持久化到 AsyncStorage，立即生效） */
+export async function setKingdeeBaseUrl(url: string): Promise<void> {
+  const trimmed = url.trim().replace(/\/$/, '');
+  kingdeeBaseUrl = trimmed || DEFAULT_KINGDEE_BASE_URL;
+  await AsyncStorage.setItem(KINGDEE_BASE_URL_STORAGE_KEY, kingdeeBaseUrl);
+}
+
+/** 应用启动时从 AsyncStorage 恢复金蝶服务器地址 */
+export async function initKingdeeBaseUrl(): Promise<void> {
+  try {
+    const saved = await AsyncStorage.getItem(KINGDEE_BASE_URL_STORAGE_KEY);
+    if (saved) kingdeeBaseUrl = saved;
+  } catch (error) {
+    console.error('Failed to restore Kingdee base URL:', error);
+  }
+}
 
 const REQUEST_TIMEOUT = 45000;
 
@@ -75,7 +103,7 @@ export function clearKingdeeSession() {
 
 export function buildUrl(service: KingdeeServiceName): string {
   const path = SERVICE_URLS[service];
-  return `${KINGDEE_BASE_URL}/K3Cloud/${path}`;
+  return `${getKingdeeBaseUrl()}/K3Cloud/${path}`;
 }
 
 export async function fetchWithTimeout(url: string, options: RequestInit): Promise<Response> {
