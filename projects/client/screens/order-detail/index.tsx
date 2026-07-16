@@ -226,7 +226,7 @@ export default function OrderDetailScreen() {
           <InfoRow label="单据日期" value={order?.date} />
           <InfoRow label="质检组织" value={order?.inspect_org_name} />
           <InfoRow label="来源组织" value={order?.source_org_name} />
-          <InfoRow label="单据状态" value={order?.document_status} />
+          <InfoRow label="单据状态" value={statusMeta.label} />
           <InfoRow label="创建人" value={order?.creator_name || order?.creator_number} />
           <InfoRow label="审核人" value={order?.approver_name || order?.approver_number} />
           <InfoRow label="创建日期" value={order?.create_date} />

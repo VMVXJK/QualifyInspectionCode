@@ -386,22 +386,22 @@ export async function viewInspectBill(
 }
 
 /**
- * 兜底查询：按单据内码从 BillQuery 补查物料编码/名称
+ * 兜底查询：按单据内码从 BillQuery 补查物料编码/名称/规格型号
  *
- * 背景：View 接口是否带出分录物料的 FName 取决于金蝶后台该单据体字段的
+ * 背景：View 接口是否带出分录物料的 FName/规格型号取决于金蝶后台该单据体字段的
  * 关联属性配置，部分环境下只返回内码；而 BillQuery 支持显式指定
- * FMaterialId.FNumber/FName，取数更可靠。详情页解析后若物料名称为空，
- * 用此函数按 FID 单独补一次查询。
+ * FMaterialId.FNumber/FName/FMaterialModel，取数更可靠。详情页解析后若物料名称
+ * 或规格型号为空，用此函数按 FID 单独补一次查询。
  */
 export async function fetchMaterialInfoByBillId(
   billId: string
-): Promise<{ material_code?: string; material_name?: string } | undefined> {
+): Promise<{ material_code?: string; material_name?: string; material_model?: string } | undefined> {
   if (!billId) return undefined;
 
   const requestBody = {
     data: {
       FormId: FORM_ID,
-      FieldKeys: 'FMaterialId.FNumber,FMaterialId.FName',
+      FieldKeys: 'FMaterialId.FNumber,FMaterialId.FName,FMaterialModel',
       FilterString: `FID = ${Number(billId)}`,
       OrderString: '',
       StartRow: 0,
@@ -424,6 +424,7 @@ export async function fetchMaterialInfoByBillId(
     return {
       material_code: first[0] ? String(first[0]) : undefined,
       material_name: first[1] ? String(first[1]) : undefined,
+      material_model: first[2] ? String(first[2]) : undefined,
     };
   }
   if (typeof first === 'object') {
@@ -431,6 +432,7 @@ export async function fetchMaterialInfoByBillId(
     return {
       material_code: rec['FMaterialId.FNumber'] ? String(rec['FMaterialId.FNumber']) : undefined,
       material_name: rec['FMaterialId.FName'] ? String(rec['FMaterialId.FName']) : undefined,
+      material_model: rec['FMaterialModel'] ? String(rec['FMaterialModel']) : undefined,
     };
   }
   return undefined;
@@ -2356,7 +2358,7 @@ function pickNumber(obj: Record<string, unknown>, candidates: string[]): number 
 }
 
 /** 辅助：从对象中按候选字段名提取基础资料 */
-function pickBaseData(obj: Record<string, unknown>, candidates: string[]): { number?: string; name?: string } {
+function pickBaseData(obj: Record<string, unknown>, candidates: string[]): { number?: string; name?: string; specification?: string } {
   return resolveBaseData(pickValue(obj, candidates));
 }
 
@@ -2451,7 +2453,8 @@ export function convertBillToLocal(bill: InspectBill): {
         material_code: matBase.number || '',
         material_name:
           matBase.name || pickString(matRec, ['FMaterialName', 'MaterialName']) || '',
-        material_model: pickString(matRec, ['FMaterialModel', 'MaterialModel']),
+        material_model:
+          matBase.specification || pickString(matRec, ['FMaterialModel', 'MaterialModel']),
         unit: unitBase.number || '',
         inspect_qty: pickNumber(matRec, ['FINSPECTQTY', 'FInspectQty', 'InspectQty']) ?? 0,
         qualified_qty: pickNumber(matRec, ['FQualifiedQty', 'QualifiedQty']),

@@ -112,12 +112,51 @@ export function formatKdDate(date: Date | string): string {
   return `${y}/${m}/${day}`;
 }
 
+/**
+ * 解析基础资料对象上某个属性的字符串值，兼容三种格式：
+ * - 直接字符串："xxx"
+ * - 多语言对象：{ zh_CN: 'xxx', en_US: 'xxx' }
+ * - 多语言数组（View 接口实测格式）：[{ Key: 2052, Value: "中文" }, { Key: 1033, Value: "English" }]
+ *   2052 = 简体中文 LCID，优先取该项；取不到则回退第一项
+ */
+function resolveMultiLangField(obj: Record<string, unknown>, candidateKeys: string[]): string | undefined {
+  for (const key of candidateKeys) {
+    const val = obj[key];
+    if (typeof val === 'string') return val;
+  }
+
+  for (const key of candidateKeys) {
+    const val = obj[key];
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const valObj = val as Record<string, unknown>;
+      const direct =
+        (typeof valObj.zh_CN === 'string' ? valObj.zh_CN : undefined) ||
+        (typeof valObj.en_US === 'string' ? valObj.en_US : undefined) ||
+        (typeof valObj['zh-CN'] === 'string' ? valObj['zh-CN'] : undefined) ||
+        (typeof valObj['en-US'] === 'string' ? valObj['en-US'] : undefined);
+      if (direct) return direct;
+    }
+  }
+
+  for (const key of candidateKeys) {
+    const val = obj[key];
+    if (Array.isArray(val)) {
+      const arr = val as Array<Record<string, unknown>>;
+      const zhEntry = arr.find((it) => it && (it.Key === 2052 || it.Key === '2052'));
+      const entry = zhEntry ?? arr[0];
+      if (entry && typeof entry.Value === 'string') return entry.Value;
+    }
+  }
+
+  return undefined;
+}
+
 /** 解析金蝶基础资料对象，兼容两种格式：
  * - View API 格式：{ Id, Number, Name }
  * - BillQuery/Legacy 格式：{ FNumber, FName }
- * - 多语言 Name：{ zh_CN: 'xxx', en_US: 'xxx' }
+ * - 多语言 Name/Specification：{ zh_CN: 'xxx', en_US: 'xxx' } 或 [{ Key, Value }]
  */
-export function resolveBaseData(val: unknown): { number?: string; name?: string } {
+export function resolveBaseData(val: unknown): { number?: string; name?: string; specification?: string } {
   if (!val || typeof val !== 'object') return {};
   const obj = val as Record<string, unknown>;
 
@@ -128,35 +167,13 @@ export function resolveBaseData(val: unknown): { number?: string; name?: string 
     (typeof obj.Number === 'string' ? obj.Number : undefined) ||
     (typeof obj.number === 'string' ? obj.number : undefined);
 
-  // 名称：兼容 FName / FNAME / Name / name
-  let name =
-    (typeof obj.FName === 'string' ? obj.FName : undefined) ||
-    (typeof obj.FNAME === 'string' ? obj.FNAME : undefined) ||
-    (typeof obj.Name === 'string' ? obj.Name : undefined) ||
-    (typeof obj.name === 'string' ? obj.name : undefined);
+  // 名称：兼容 FName / FNAME / Name / name（含多语言对象/数组）
+  const name = resolveMultiLangField(obj, ['FName', 'FNAME', 'Name', 'name']);
 
-  // 处理多语言 Name 对象（如 { zh_CN: "中文名", en_US: "English Name" }）
-  if (!name && obj.Name && typeof obj.Name === 'object' && !Array.isArray(obj.Name)) {
-    const nameObj = obj.Name as Record<string, unknown>;
-    name =
-      (typeof nameObj.zh_CN === 'string' ? nameObj.zh_CN : undefined) ||
-      (typeof nameObj.en_US === 'string' ? nameObj.en_US : undefined) ||
-      (typeof nameObj['zh-CN'] === 'string' ? nameObj['zh-CN'] : undefined) ||
-      (typeof nameObj['en-US'] === 'string' ? nameObj['en-US'] : undefined);
-  }
+  // 规格型号：兼容 FSpecification / FSPECIFICATION / Specification / specification（含多语言对象/数组）
+  const specification = resolveMultiLangField(obj, ['FSpecification', 'FSPECIFICATION', 'Specification', 'specification']);
 
-  // 处理多语言 Name 数组（View 接口实测格式：[{ Key: 2052, Value: "中文名" }, { Key: 1033, Value: "English" }]）
-  // 2052 = 简体中文 LCID，优先取该项；取不到则回退第一项
-  if (!name && Array.isArray(obj.Name)) {
-    const nameArr = obj.Name as Array<Record<string, unknown>>;
-    const zhEntry = nameArr.find((it) => it && (it.Key === 2052 || it.Key === '2052'));
-    const entry = zhEntry ?? nameArr[0];
-    if (entry && typeof entry.Value === 'string') {
-      name = entry.Value;
-    }
-  }
-
-  return { number, name };
+  return { number, name, specification };
 }
 
 /** 从对象中安全读取字符串值，兼容两种字段名（大写/驼峰/不区分大小写） */

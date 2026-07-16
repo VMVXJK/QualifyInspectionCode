@@ -243,7 +243,6 @@ export default function OrderListScreen() {
               <View style={[styles.dot, { backgroundColor: typeMeta.color }]} />
               <Text style={styles.metaText}>{typeMeta.label}</Text>
             </View>
-            <Text style={styles.metaText}>单据状态: {item.document_status}</Text>
           </View>
           <View style={styles.cardBottom}>
             <Text style={styles.dateText}>
