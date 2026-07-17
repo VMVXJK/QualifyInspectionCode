@@ -12,26 +12,16 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { callKingdee, callKingdeePost, callKingdeeSingle } from './client';
+import { callKingdeePost } from './client';
 import {
   mapDocumentStatus,
   autoJudge,
-  formatKdDate,
-  toKdJson,
   resolveBaseData,
-  resolveString,
-  resolveNumber,
 } from './utils';
 import type {
   InspectBill,
   InspectBillEntry,
   InspectItemDetail,
-  DefectDetail,
-  BillQueryParam,
-  ViewParam,
-  SaveParam,
-  SubmitParam,
-  AuditParam,
   OrderSummary,
   MaterialInfo,
   DecisionInfo,
@@ -438,57 +428,6 @@ export async function fetchMaterialInfoByBillId(
   return undefined;
 }
 
-/**
- * 通用查看表单数据（View 接口）
- * @param formId  金蝶表单标识，如 "QM_InspectBill"、"BD_MATERIAL" 等
- * @param query   查询条件：Id（内码）或 Number（编码）至少填一个
- * @param orgId   创建组织Id（可选）
- * @returns 金蝶返回的原始 Result 数据
- */
-export async function viewForm<T = unknown>(
-  formId: string,
-  query: { id?: string; number?: string },
-  orgId?: number
-): Promise<T> {
-  if (!query.id && !query.number) {
-    throw new Error('查询表单详情时必须提供 ID 或 Number');
-  }
-
-  const requestBody = {
-    formid: formId,
-    data: {
-      CreateOrgId: orgId ?? 0,
-      Number: query.number ?? '',
-      ID: query.id ?? '',
-      IsSortBySeq: 'false',
-    },
-  };
-
-  const result = await callKingdeePost<unknown>('View', requestBody);
-  return extractViewResult<T>(result);
-}
-
-/* ════════════════════════════════════════
-   Save 接口字段格式化工具函数
-   ════════════════════════════════════════ */
-
-/** 将布尔值转为金蝶要求的字符串格式："true" / "false" */
-function formatKdBoolean(val: boolean | string | undefined): string {
-  if (typeof val === 'string') return val === 'true' ? 'true' : 'false';
-  return val === true ? 'true' : 'false';
-}
-
-/** 将日期转为金蝶要求的 YYYY-MM-DD 格式 */
-function formatKdDateStr(val: string | Date | undefined): string {
-  if (!val) return '1900-01-01';
-  const d = typeof val === 'string' ? new Date(val.replace(/\//g, '-')) : val;
-  if (isNaN(d.getTime())) return '1900-01-01';
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
 /** 判断基础资料字段应使用 FNumber 还是 FNUMBER */
 function shouldUseFNumber(fieldName: string): boolean {
   const fNumberFields = [
@@ -499,455 +438,12 @@ function shouldUseFNumber(fieldName: string): boolean {
   return fNumberFields.includes(fieldName);
 }
 
-/** 判断字段名是否为基础资料字段（支持带F前缀和不带F前缀） */
-function isBaseDataFieldName(fieldName: string): boolean {
-  const patterns = [
-    /^(F)?BillTypeID$/i, /^(F)?BFLowId$/i, /^(F)?BomId$/i, /^(F)?Currency$/i,
-    /^(F)?CustomerId$/i, /^(F)?BaseUnitId$/i, /^(F)?MaterialId$/i, /^(F)?KeeperId$/i,
-    /^(F)?Lot$/i, /^(F)?OwnerId$/i, /^(F)?PrdUnitId$/i, /^(F)?ProductLineId$/i,
-    /^(F)?QCSchemeId$/i, /^(F)?SampleSchemeId\d*$/i, /^(F)?SNUnitID$/i,
-    /^(F)?StockGroupId$/i, /^(F)?StockId$/i, /^(F)?StockerId$/i, /^(F)?SupplierId$/i,
-    /^(F)?WorkshopId$/i, /^(F)?UnitID$/i, /^(F)?InspectDepId$/i, /^(F)?InspectOrgId$/i,
-    /^(F)?InspectorId$/i, /^(F)?SourceOrgId$/i, /^(F)?InspectItemId$/i,
-    /^(F)?InspectBasisId$/i, /^(F)?InspectInstrumentId$/i, /^(F)?InspectMethodId$/i,
-    /^(F)?QualityStdId$/i, /^(F)?UnitId\d*$/i, /^(F)?DefectTypeId$/i,
-    /^(F)?DefectReasonId$/i, /^(F)?DefectResultId$/i, /^(F)?DSerialId$/i,
-    /^(F)?InspectValB$/i, /^(F)?DownLimitB$/i, /^(F)?DownOffsetB$/i,
-    /^(F)?TargetValB$/i, /^(F)?UpLimitB$/i, /^(F)?UpOffsetB$/i,
-    /^(F)?InspectValueB$/i, /^(F)?VSerialId$/i, /^(F)?ValueUnitID$/i,
-    /^(F)?PolicyMaterialId$/i, /^(F)?SerialId$/i, /^(F)?StockLocId$/i,
-    /^(F)?PrdLineLocation$/i, /^(F)?OrderType$/i,
-  ];
-  return patterns.some((p) => p.test(fieldName));
-}
-
-/** 获取空基础资料字典（根据字段名返回正确的空对象格式） */
-function getEmptyBaseData(fieldName: string): object {
-  if (/^(F)?StockLocId$/i.test(fieldName)) return {};
-  if (/^(F)?BFLowId$/i.test(fieldName)) return { FNAME: '' };
-  if (/^(F)?PrdLineLocation$/i.test(fieldName)) return { FLOCATIONCODE: '' };
-  if (/^(F)?OrderType$/i.test(fieldName)) return { FID: '' };
-  if (shouldUseFNumber(fieldName)) return { FNumber: '' };
-  return { FNUMBER: '' };
-}
-
-/** 将基础资料对象转为金蝶 Save 接口要求的格式
- * 支持：空值、字符串、对象（{Id,Number,Name} / {FNumber} / {FNUMBER}）
- */
-function formatKdBaseData(val: unknown, fieldName: string): object {
-  // 空值/0 → 返回对应的空字典
-  if (val === null || val === undefined || val === '' || val === 0) {
-    return getEmptyBaseData(fieldName);
-  }
-
-  // 字符串值 → 包装为 { FNUMBER: val } 或 { FNumber: val }
-  if (typeof val === 'string') {
-    if (shouldUseFNumber(fieldName)) return { FNumber: val };
-    return { FNUMBER: val };
-  }
-
-  // 对象值 → 提取 Number/Name/Id
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    const obj = val as Record<string, unknown>;
-    const number =
-      (typeof obj.Number === 'string' ? obj.Number : undefined) ||
-      (typeof obj.FNumber === 'string' ? obj.FNumber : undefined) ||
-      (typeof obj.FNUMBER === 'string' ? obj.FNUMBER : undefined) ||
-      '';
-
-    if (shouldUseFNumber(fieldName)) {
-      return { FNumber: number };
-    }
-    return { FNUMBER: number };
-  }
-
-  return getEmptyBaseData(fieldName);
-}
-
-/** 递归遍历 Model，将所有字段格式化为金蝶 Save 接口要求的格式
- * - 布尔值 → "true" / "false"
- * - 基础资料 → { FNUMBER } 或 { FNumber }
- * - 日期字符串中的 / 转为 -（保留原值，由调用方决定是否需要格式化）
- */
-function prepareModelForSave(obj: any): any {
-  if (obj === null || obj === undefined) return '';
-  if (typeof obj === 'boolean') return obj ? 'true' : 'false';
-  if (typeof obj === 'string') return obj;
-  if (typeof obj === 'number') return obj;
-  if (Array.isArray(obj)) return obj.map(prepareModelForSave);
-  if (typeof obj === 'object') {
-    const result: any = {};
-    for (const [key, value] of Object.entries(obj)) {
-      // 基础资料字段：无论值是对象、字符串还是空值，都转为正确的字典格式
-      if (isBaseDataFieldName(key)) {
-        result[key] = formatKdBaseData(value, key);
-        continue;
-      }
-      // 子单据体内的基础资料字段（如 FInspectValB、FInspectValueB 等）
-      if (
-        value &&
-        typeof value === 'object' &&
-        !Array.isArray(value)
-      ) {
-        const v = value as Record<string, unknown>;
-        const isBaseData =
-          'Number' in v || 'Id' in v || 'Name' in v || 'FNumber' in v || 'FNUMBER' in v;
-        if (
-          isBaseData &&
-          !key.includes('Detail') &&
-          key !== 'FValueGrid' &&
-          key !== 'FPolicyDetail' &&
-          key !== 'FEntity_Link' &&
-          key !== 'FEntityLink' &&
-          key !== 'Entity_Link'
-        ) {
-          result[key] = formatKdBaseData(value, key);
-          continue;
-        }
-      }
-      result[key] = prepareModelForSave(value);
-    }
-    return result;
-  }
-  return String(obj);
-}
-
 /* ════════════════════════════════════════
    2. 保存/更新检验结果（Save）
    ════════════════════════════════════════ */
 
-/**
- * 保存检验单（更新已有单据的检验项目、缺陷、决策）
- *
- * 采用金蝶标准 Save 接口，请求格式参考 View：
- * { formid: "QM_InspectBill", data: { Creator, NeedUpDateFields, Model } }
- *
- * @param bill 完整的检验单数据（必须包含 FID 或 FBILLNO）
- */
-export async function saveInspectBill(
-  bill: Partial<InspectBill> & { FID?: string; FBILLNO?: string },
-  options?: {
-    needUpdateFields?: string[];
-    needReturnFields?: string[];
-    /** 金蝶 Save API data 级别的额外参数（如 FEntity_Link_FRuleId） */
-    extraDataFields?: Record<string, any>;
-  }
-): Promise<{
-  success: boolean;
-  billNo?: string;
-  id?: string;
-  diagnostics: {
-    request: unknown;
-    response: unknown;
-    status?: KingdeeResponseStatus;
-    error?: string;
-  };
-}> {
-  // 校验失败时返回诊断而非抛错，确保 UI 能展示诊断面板
-  if (!bill.FID && !bill.FBILLNO) {
-    return {
-      success: false,
-      diagnostics: {
-        request: { bill },
-        response: null,
-        error: '保存检验单时必须提供 FID 或 FBILLNO（当前 bill 字段: ' + Object.keys(bill).join(',') + '）',
-      },
-    };
-  }
-
-  // 采用金蝶标准 Save 接口格式
-  // 核心修正：所有布尔参数必须使用字符串 "true" / "false"，不能用 JavaScript 布尔值
-  // 金蝶服务端严格匹配字符串格式，若传布尔值 true/false 会被忽略，导致 IsDeleteEntry 默认生效为 "true"
-  const data: Record<string, any> = {
-    Creator: '',
-    NeedReturnFields: [],
-    IsDeleteEntry: 'false',
-    SubSystemId: '',
-    IsVerifyBaseDataField: 'false',
-    IsEntryBatchFill: 'true',
-    ValidateFlag: 'true',
-    NumberSearch: 'true',
-    IsAutoAdjustField: 'false',
-    IsControlPrecision: 'false',
-    ValidateRepeatJson: 'false',
-    Model: prepareModelForSave(bill),
-    InterationFlags: '',
-    IgnoreInterationFlag: '',
-    ...options?.extraDataFields,
-  };
-
-  // NeedUpDateFields 处理：
-  // - 如果未提供 needUpdateFields，则不传 NeedUpDateFields（让金蝶完全根据 Model 自动判断）
-  // - 如果提供了 needUpdateFields，则传入指定字段
-  // 注意：某些金蝶版本对 NeedUpDateFields: [] 的处理与完全不传不同
-  if (options?.needUpdateFields && options.needUpdateFields.length > 0) {
-    data.NeedUpDateFields = [...new Set(options.needUpdateFields)];
-  }
-
-  const requestBody: Record<string, any> = {
-    formid: FORM_ID,
-    data,
-  };
-
-  let result: unknown;
-  let responseError: string | undefined;
-  try {
-    result = await callKingdeePost<{
-      ResponseStatus?: KingdeeResponseStatus;
-      Result?: { ResponseStatus?: KingdeeResponseStatus; Result?: { Number?: string; Id?: string } };
-    }>('Save', requestBody);
-  } catch (err) {
-    responseError = err instanceof Error ? err.message : String(err);
-    result = null;
-  }
-
-  // 收集诊断信息
-  const diagnostics = {
-    request: requestBody,
-    response: result,
-    error: responseError,
-  };
-
-  // 如果请求抛错（网络异常、返回空、返回 HTML 等）
-  if (responseError) {
-    return {
-      success: false,
-      diagnostics: { ...diagnostics, error: responseError },
-    };
-  }
-
-  // 防御：可能返回 null 或空对象
-  if (!result || typeof result !== 'object') {
-    return {
-      success: false,
-      diagnostics: { ...diagnostics, error: '接口返回异常（空或非法格式）' },
-    };
-  }
-
-  // 兼容两种返回结构：
-  // 1) Save 接口返回 { Result: { ResponseStatus, Result: { Number, Id } } }
-  // 2) 直接返回 { ResponseStatus }
-  const resultRec = result as Record<string, any>;
-  const status =
-    resultRec.Result?.ResponseStatus ??
-    resultRec.ResponseStatus;
-
-  if (!status || !status.IsSuccess) {
-    const errs = status?.Errors;
-    const firstErr = Array.isArray(errs) && errs.length > 0 ? errs[0] : undefined;
-    const errMsg = firstErr?.Message || '保存检验单失败';
-    return {
-      success: false,
-      diagnostics: { ...diagnostics, status, error: errMsg },
-    };
-  }
-
-  // 提取返回的单据编号/ID
-  const nestedResult = resultRec.Result?.Result;
-  return {
-    success: true,
-    billNo: nestedResult?.Number,
-    id: nestedResult?.Id,
-    diagnostics: { ...diagnostics, status },
-  };
-}
-
-/**
- * 更新检验项目的检测值与判定结果
-}
-
-/**
- * 更新检验项目的检测值与判定结果
- * 构造精简的 Model 只回传需要更新的字段和分录
- *
- * 注意：检验项目明细在金蝶中实际字段标识为 FItemDetail，位于 FEntity 分录下。
- */
-export async function updateInspectItems(
-  billId: string,
-  entryId: string,
-  items: Array<{
-    detailId?: string;
-    itemId: string;
-    inspectVal: string;
-    result: string;
-  }>
-) {
-  const bill: Partial<InspectBill> = {
-    FID: billId,
-    FEntity: [
-      {
-        FEntryID: entryId,
-        FItemDetail: items.map((it) => ({
-          FDetailID: it.detailId ?? '0',
-          FInspectItemId: { FNUMBER: it.itemId },
-          FInspectVal: it.inspectVal,
-          FInspectResult1: it.result,
-        })),
-      } as InspectBillEntry,
-    ],
-  };
-
-  return saveInspectBill(bill, {
-    needUpdateFields: ['FEntity.FEntryID', 'FEntity.FItemDetail'],
-  });
-}
-
-/**
- * 按分析方法回传检验值（定量/定性/其他）
- *
- * 根据金蝶实际业务：
- * - 定量分析 -> FInspectValQ（数值）
- * - 定性分析 -> FInspectValB（基础资料 { FNUMBER: "编码" }，注意键名全大写）
- * - 其他分析 -> FInspectValT（字符串）
- */
-export async function updateInspectValues(params: {
-  billId: string;
-  entryId: string;
-  items: Array<{
-    detailId: string;
-    /** 分析方法：定量/定性/其他 */
-    analysisMethod?: string;
-    /** 定量值 */
-    valQ?: number;
-    /** 定性值（基础资料编码） */
-    valB?: string;
-    /** 其他值 */
-    valT?: string;
-  }>;
-}) {
-  const { billId, entryId, items } = params;
-
-  const fItemDetail = items.map((it) => {
-    const detail: Partial<InspectItemDetail> = {
-      FDetailID: it.detailId,
-    };
-    const method = (it.analysisMethod || '').trim();
-    if (method.includes('定量')) {
-      if (it.valQ !== undefined) detail.FInspectValQ = it.valQ;
-    } else if (method.includes('定性')) {
-      // 金蝶系统要求键名为 FNUMBER（全大写）
-      if (it.valB !== undefined) detail.FInspectValB = { FNUMBER: it.valB };
-    } else {
-      // 默认"其他"
-      if (it.valT !== undefined) detail.FInspectValT = it.valT;
-    }
-    return detail;
-  });
-
-  const bill: Partial<InspectBill> = {
-    FID: billId,
-    FEntity: [
-      {
-        FEntryID: entryId,
-        FItemDetail: fItemDetail,
-      } as InspectBillEntry,
-    ],
-  };
-
-  return saveInspectBill(bill, {
-    needUpdateFields: ['FEntity.FEntryID', 'FEntity.FItemDetail'],
-  });
-}
-
 /* ════════════════════════════════════════
-   3. 查询检验项目定性检测值选项（BillQuery）
-   ════════════════════════════════════════ */
-
-export interface QualitativeOption {
-  code: string; // 编码，回传 FInspectValB 用
-  text: string; // 显示文字
-}
-
-const QM_IIIVRelated_FORM_ID = 'QM_IIIVRelated';
-const QIR_FIELD_KEYS = [
-  'FNumber', // 检验项目编码
-  'FName', // 检验项目名称
-  'FEntity_FInspectValueId', // 检测值编码（基础资料，可能返回对象或字符串）
-  'FEntity_FInspectValueName', // 检测值名称
-].join(',');
-
-/**
- * 批量查询检验项目的定性检测值选项
- *
- * 通过 BillQuery 查询 QM_IIIVRelated（检验项目对应检测值）表单，
- * 返回按检验项目编码分组的检测值选项列表。
- *
- * @param itemIds 检验项目编码数组
- * @returns Record<itemId, QualitativeOption[]>
- */
-export async function queryQualitativeOptions(
-  itemIds: string[]
-): Promise<Record<string, QualitativeOption[]>> {
-  if (itemIds.length === 0) return {};
-
-  // 去重并过滤空值
-  const uniqueIds = [...new Set(itemIds.filter((id) => !!id))];
-  if (uniqueIds.length === 0) return {};
-
-  // 构建过滤条件：FNumber in ('code1','code2',...)
-  const idList = uniqueIds.map((id) => `'${id.replace(/'/g, "\\'")}'`).join(',');
-  const filterString = `FNumber in (${idList})`;
-
-  const requestBody = {
-    data: {
-      FormId: QM_IIIVRelated_FORM_ID,
-      FieldKeys: QIR_FIELD_KEYS,
-      FilterString: filterString,
-      OrderString: '',
-      StartRow: 0,
-      Limit: 2000,
-    },
-  };
-
-  let result: unknown;
-  try {
-    result = await callKingdeePost<unknown>('BillQuery', requestBody);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : '查询检测值选项失败';
-    throw new Error(msg);
-  }
-
-  // 解析返回数据（兼容对象数组 / 二维数组 / 嵌套包装格式）
-  const rows = parseBillQueryRows(result);
-
-  // 按检验项目编码分组
-  const groups: Record<string, QualitativeOption[]> = {};
-
-  for (const row of rows) {
-    // BillQuery 返回每行是一个对象或数组
-    let itemCode: string | undefined;
-    let valueCode: string | undefined;
-    let valueName: string | undefined;
-
-    if (Array.isArray(row)) {
-      // 二维数组格式：[FNumber, FName, FInspectValueId, FInspectValueName]
-      itemCode = String(row[0] ?? '');
-      valueCode = extractCodeFromValue(row[2]);
-      valueName = String(row[3] ?? '');
-    } else if (row && typeof row === 'object') {
-      // 对象数组格式
-      const rec = row as Record<string, unknown>;
-      itemCode = String(rec.FNumber ?? rec.FNUMBER ?? rec.fnumber ?? '');
-      valueCode = extractCodeFromValue(rec.FEntity_FInspectValueId ?? rec.FEntity_FInspectValueID);
-      valueName = String(rec.FEntity_FInspectValueName ?? rec.FEntity_FInspectValueNAME ?? '');
-    }
-
-    if (!itemCode || !valueCode || !valueName) continue;
-
-    if (!groups[itemCode]) {
-      groups[itemCode] = [];
-    }
-    // 去重：同一检验项目下相同编码只保留一次
-    if (!groups[itemCode].some((o) => o.code === valueCode)) {
-      groups[itemCode].push({ code: valueCode, text: valueName });
-    }
-  }
-
-  return groups;
-}
-
-/* ════════════════════════════════════════
-   4. 同步检验方法映射表（BillQuery → AsyncStorage）
+   2. 同步检验方法映射表（BillQuery → AsyncStorage）
    ════════════════════════════════════════ */
 
 const METHOD_MAP_STORAGE_KEY = '__sync_inspect_method_map';
@@ -1509,24 +1005,6 @@ export async function loadBillTypeMapFromStorage(): Promise<Record<string, strin
   return {};
 }
 
-/** 从 BillQuery 返回的基础资料字段中提取编码字符串 */
-function extractCodeFromValue(val: unknown): string | undefined {
-  if (val === null || val === undefined) return undefined;
-  if (typeof val === 'string') return val;
-  if (typeof val === 'number') return String(val);
-  if (typeof val === 'object' && !Array.isArray(val)) {
-    const obj = val as Record<string, unknown>;
-    return (
-      (typeof obj.FNUMBER === 'string' ? obj.FNUMBER : undefined) ||
-      (typeof obj.FNumber === 'string' ? obj.FNumber : undefined) ||
-      (typeof obj.Number === 'string' ? obj.Number : undefined) ||
-      (typeof obj.number === 'string' ? obj.number : undefined) ||
-      undefined
-    );
-  }
-  return undefined;
-}
-
 /** 统一解析 BillQuery 返回结果为对象数组 */
 function parseBillQueryRows(raw: unknown): unknown[] {
   if (!raw) return [];
@@ -1555,67 +1033,6 @@ function parseBillQueryRows(raw: unknown): unknown[] {
   }
 
   return [];
-}
-
-/**
- * 更新缺陷记录
- */
-export async function updateDefects(
-  billId: string,
-  defects: DefectInfo[],
-  options?: { isNew?: boolean }
-) {
-  const bill: Partial<InspectBill> = {
-    FID: billId,
-    FEntity: [
-      {
-        FEntryID: '0',
-        FDefectDetail: defects.map((d) => ({
-          Id: d.detail_id ? (d.detail_id.startsWith('temp_') ? '0' : d.detail_id) : '0',
-          FDefectTypeId: { FNUMBER: encodeDefectType(d.defect_type) || d.defect_type },
-          FDefectQty: d.defect_qty,
-          FDefectReasonId: d.defect_reason ? { FNUMBER: encodeDefectReason(d.defect_reason) || d.defect_reason } : undefined,
-          FDefectLevel: encodeDefectLevel(d.defect_level) || d.defect_level,
-          FDefectResultId: d.defect_result ? { FNUMBER: encodeDefectResult(d.defect_result) || d.defect_result } : undefined,
-        })),
-      } as InspectBillEntry,
-    ],
-  };
-
-  return saveInspectBill(bill, {
-    needUpdateFields: ['FEntity.FEntryID', 'FEntity.FDefectDetail'],
-  });
-}
-
-/**
- * 更新使用决策（在表体 FEntity 中）
- */
-export async function updateDecisions(
-  billId: string,
-  entryId: string,
-  decision: DecisionInfo
-) {
-  const bill: Partial<InspectBill> = {
-    FID: billId,
-    FEntity: [
-      {
-        FEntryID: entryId,
-        FPolicyDetail: [
-          {
-            FPolicyStatus: encodePolicyStatus(decision.policy_status) ?? '',
-            FPolicyQty: decision.policy_qty ?? 0,
-            FUsePolicy: encodeUsePolicy(decision.use_policy) ?? '',
-            FIsDefectProcess: decision.is_defect_process ? 'true' : 'false',
-            FIsMRBReview: decision.is_mrb_review ? 'true' : 'false',
-          },
-        ],
-      } as InspectBillEntry,
-    ],
-  };
-
-  return saveInspectBill(bill, {
-    needUpdateFields: ['FEntity.FEntryID', 'FEntity.FPolicyDetail'],
-  });
 }
 
 /* ════════════════════════════════════════
@@ -2064,26 +1481,6 @@ export async function submitInspectBill(numbers: string[], orgId?: number) {
   if (!status.IsSuccess) {
     const err = status.Errors?.[0];
     throw new Error(err?.Message || '提交检验单失败');
-  }
-  return { success: true };
-}
-
-/** 审核单据 */
-export async function auditInspectBill(numbers: string[], orgId?: number) {
-  const param: AuditParam = {
-    CreateOrgId: orgId ?? 0,
-    Numbers: numbers,
-  };
-
-  const result = await callKingdee<{
-    Result: { ResponseStatus: KingdeeResponseStatus };
-    ResponseStatus: KingdeeResponseStatus;
-  }>('Audit', [FORM_ID, toKdJson(param)]);
-
-  const status = result.Result?.ResponseStatus ?? result.ResponseStatus;
-  if (!status.IsSuccess) {
-    const err = status.Errors?.[0];
-    throw new Error(err?.Message || '审核检验单失败');
   }
   return { success: true };
 }
@@ -2556,18 +1953,14 @@ export function convertBillToLocal(bill: InspectBill): {
 
     // 检验项目名称：优先直接字段，其次从基础资料 FInspectItemId 中取 Name
     let itemName = pickString(itRec, ['FInspectItemName', 'InspectItemName', 'FINSPECTITEMNAME']);
-    console.log('[convertBillToLocal] raw item keys:', Object.keys(itRec).slice(0, 20));
-    console.log('[convertBillToLocal] FInspectItemName direct:', itemName);
 
     if (!itemName) {
       const itemBase = pickBaseData(itRec, ['FInspectItemId', 'FInspectItemID', 'InspectItemId', 'FINSPECTITEMID']);
-      console.log('[convertBillToLocal] FInspectItemId baseData:', JSON.stringify(itemBase));
       itemName = itemBase.name || '';
     }
     // 再次回退：尝试 FInspectItemId 对象本身的 FName/FNAME/Name 字段
     if (!itemName) {
       const itemIdVal = pickValue(itRec, ['FInspectItemId', 'FInspectItemID', 'InspectItemId', 'FINSPECTITEMID']);
-      console.log('[convertBillToLocal] FInspectItemId raw val type:', typeof itemIdVal);
       if (itemIdVal && typeof itemIdVal === 'object' && !Array.isArray(itemIdVal)) {
         const idObj = itemIdVal as Record<string, unknown>;
         itemName =
@@ -2576,11 +1969,9 @@ export function convertBillToLocal(bill: InspectBill): {
           (typeof idObj.Name === 'string' ? idObj.Name : undefined) ||
           (typeof idObj.name === 'string' ? idObj.name : undefined) ||
           '';
-        console.log('[convertBillToLocal] FInspectItemId object name:', itemName);
       } else if (typeof itemIdVal === 'string') {
         // 如果 FInspectItemId 是字符串编码，尝试用它作为名称（兜底）
         itemName = itemIdVal;
-        console.log('[convertBillToLocal] FInspectItemId string fallback:', itemName);
       }
     }
     // 最终兜底：尝试所有可能的名称字段
@@ -2589,7 +1980,6 @@ export function convertBillToLocal(bill: InspectBill): {
         pickString(itRec, ['FName', 'Name', 'FNAME', 'name']) ||
         pickString(itRec, ['FMaterialName', 'MaterialName']) ||
         '';
-      console.log('[convertBillToLocal] final fallback name:', itemName);
     }
 
     // 检验方法 & 检验仪器（基础资料对象，取名称）

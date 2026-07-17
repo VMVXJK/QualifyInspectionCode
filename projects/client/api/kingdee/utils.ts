@@ -1,49 +1,6 @@
-import * as Crypto from 'expo-crypto';
-
 /**
  * 金蝶云星空工具函数
  */
-
-/** 生成当前时间戳（秒级） */
-export function getTimestamp(): number {
-  return Math.floor(Date.now() / 1000);
-}
-
-/**
- * 生成 SHA256 签名
- * 金蝶规则：将账套ID、用户名、应用ID、应用秘钥、时间戳放到数组，排序后拼接，SHA256加密
- */
-export async function generateSign(params: {
-  acctId: string;
-  userName: string;
-  appId: string;
-  appSecret: string;
-  timestamp: number;
-}): Promise<string> {
-  const { acctId, userName, appId, appSecret, timestamp } = params;
-  const arr = [acctId, userName, appId, appSecret, String(timestamp)];
-  arr.sort((a, b) => a.localeCompare(b));
-  const raw = arr.join('');
-
-  // Expo 环境使用 expo-crypto，若不可用则回退到 js-sha256 或 Web Crypto
-  try {
-    const digest = await Crypto.digestStringAsync(
-      Crypto.CryptoDigestAlgorithm.SHA256,
-      raw
-    );
-    return digest.toLowerCase();
-  } catch {
-    // Fallback：尝试 Web Crypto
-    if (typeof crypto !== 'undefined' && crypto.subtle) {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(raw);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('').toLowerCase();
-    }
-    throw new Error('SHA256 计算不可用，请确保 expo-crypto 已安装');
-  }
-}
 
 /** 将对象序列化为金蝶标准 JSON 字符串（用于接口参数） */
 export function toKdJson(obj: unknown): string {
@@ -67,20 +24,6 @@ export function mapDocumentStatus(docStatus: string): string {
   }
 }
 
-/** APP 状态标签 → 金蝶状态（如需回写） */
-export function toKdDocumentStatus(status: string): string {
-  switch (status) {
-    case 'pending':
-      return 'Z';
-    case 'inspecting':
-      return 'B';
-    case 'completed':
-      return 'C';
-    default:
-      return 'Z';
-  }
-}
-
 /** 自动判定检测值是否合格 */
 export function autoJudge(
   testValue: string | number | undefined,
@@ -101,15 +44,6 @@ export function autoJudge(
   if (upper !== undefined && val > upper) return '不合格';
   if (lower !== undefined && val < lower) return '不合格';
   return '合格';
-}
-
-/** 格式化日期为金蝶接受的字符串（yyyy/MM/dd 或 ISO） */
-export function formatKdDate(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}/${m}/${day}`;
 }
 
 /**
@@ -174,76 +108,4 @@ export function resolveBaseData(val: unknown): { number?: string; name?: string;
   const specification = resolveMultiLangField(obj, ['FSpecification', 'FSPECIFICATION', 'Specification', 'specification']);
 
   return { number, name, specification };
-}
-
-/** 从对象中安全读取字符串值，兼容两种字段名（大写/驼峰/不区分大小写） */
-export function resolveString(
-  obj: Record<string, unknown>,
-  ...keys: string[]
-): string | undefined {
-  // 先精确匹配
-  for (const key of keys) {
-    const val = obj[key];
-    if (typeof val === 'string') return val;
-    if (typeof val === 'number') return String(val);
-  }
-  // 再不区分大小写匹配
-  const lowerMap = Object.fromEntries(
-    Object.keys(obj).map((k) => [k.toLowerCase(), k])
-  );
-  for (const key of keys) {
-    const actual = lowerMap[key.toLowerCase()];
-    if (actual) {
-      const val = obj[actual];
-      if (typeof val === 'string') return val;
-      if (typeof val === 'number') return String(val);
-    }
-  }
-  return undefined;
-}
-
-/** 从对象中安全读取数值，兼容两种字段名（大写/驼峰/不区分大小写） */
-export function resolveNumber(
-  obj: Record<string, unknown>,
-  ...keys: string[]
-): number | undefined {
-  // 先精确匹配
-  for (const key of keys) {
-    const val = obj[key];
-    if (typeof val === 'number') return val;
-    if (typeof val === 'string') {
-      const parsed = parseFloat(val);
-      if (!isNaN(parsed)) return parsed;
-    }
-  }
-  // 再不区分大小写匹配
-  const lowerMap = Object.fromEntries(
-    Object.keys(obj).map((k) => [k.toLowerCase(), k])
-  );
-  for (const key of keys) {
-    const actual = lowerMap[key.toLowerCase()];
-    if (actual) {
-      const val = obj[actual];
-      if (typeof val === 'number') return val;
-      if (typeof val === 'string') {
-        const parsed = parseFloat(val);
-        if (!isNaN(parsed)) return parsed;
-      }
-    }
-  }
-  return undefined;
-}
-export function parseBillQueryResult<T extends Record<string, unknown>>(
-  rows: unknown[],
-  fieldKeys: string[]
-): T[] {
-  return rows.map((row) => {
-    const values = Array.isArray(row) ? row : [row];
-    const obj: Record<string, unknown> = {};
-    fieldKeys.forEach((key, idx) => {
-      const cleanKey = key.replace(/^FMaterialId\./, '').replace(/^F\w+\./, '');
-      obj[cleanKey] = values[idx];
-    });
-    return obj as T;
-  });
 }
