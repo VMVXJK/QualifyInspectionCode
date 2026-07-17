@@ -11,7 +11,7 @@ import {
 import { Screen } from '@/components/Screen';
 import { useSafeRouter, useSafeSearchParams } from '@/hooks/useSafeRouter';
 import { Ionicons } from '@expo/vector-icons';
-import { getKingdeeSessionCookie } from '@/api/kingdee/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 import { useBillDetail } from './hooks/useBillDetail';
 import { useInspectionForm } from './hooks/useInspectionForm';
@@ -43,6 +43,7 @@ const PAD = IS_PORTRAIT ? 16 : 20;
 export default function OrderDetailScreen() {
   const router = useSafeRouter();
   const { orderId, orderNo } = useSafeSearchParams<{ orderId: string; orderNo?: string }>();
+  const { isAuthenticated } = useAuth();
 
   // 定性检验值选择器状态
   const [showQualitativeModal, setShowQualitativeModal] = useState(false);
@@ -181,7 +182,7 @@ export default function OrderDetailScreen() {
   }
 
   // 未登录且无缓存
-  if (!getKingdeeSessionCookie() && !order) {
+  if (!isAuthenticated && !order) {
     return (
       <Screen>
         <View style={[styles.container, styles.center]}>

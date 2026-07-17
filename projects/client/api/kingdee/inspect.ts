@@ -128,8 +128,8 @@ export async function queryInspectBills(params?: {
       FieldKeys: LIST_FIELD_KEYS,
       FilterString: filterString,
       OrderString: ' FDate DESC ',
-      StartRow: 0,
-      Limit: 50,
+      StartRow: params?.startRow ?? 0,
+      Limit: params?.limit ?? 50,
     },
   };
 
@@ -1368,6 +1368,9 @@ export async function submitInspectionResult(params: {
     FID: billId,
     FEntity: [modelEntry],
   };
+  if (inspector) {
+    model.FInspectorId = { FNumber: inspector };
+  }
 
   // 5. 构造极简请求（只传 IsDeleteEntry 和 Model）
   const data: Record<string, any> = {

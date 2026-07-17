@@ -4,6 +4,7 @@ import { autoJudge } from '@/api/kingdee/utils';
 import { showSuccess, showError } from '@/utils/toast';
 import { showConfirm } from '@/utils/alert';
 import { recordHistory } from '@/utils/operationHistory';
+import { useAuth } from '@/contexts/AuthContext';
 import type { LocalItem, LocalDefect, LocalDecision, LocalMaterial, LocalOrder, SaveDiagnostics } from '../types';
 
 interface UseInspectionFormParams {
@@ -45,6 +46,7 @@ interface UseInspectionFormResult {
  */
 export function useInspectionForm(params: UseInspectionFormParams): UseInspectionFormResult {
   const { order, material, items, defects: initialDefects, decisions: initialDecisions, rawBill, fetchDetail } = params;
+  const { user } = useAuth();
 
   // 检测值编辑态：detailId -> inspectVal
   const [editingItems, setEditingItems] = useState<Record<string, string>>(() => {
@@ -209,7 +211,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
       const result = await submitInspectionResult({
         billId: order.id,
         entryId: material?.entry_id,
-        inspector: '',
+        inspector: user?.name || '',
         billResult: mappedItems.every((it) => autoJudge(it.inspect_val, it.upper_limit, it.lower_limit) === '合格')
           ? '合格'
           : '不合格',
@@ -250,7 +252,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
         detail: message,
       });
     }
-  }, [order, material, items, defects, editingDecisions, editingItems, rawBill, fetchDetail]);
+  }, [order, material, items, defects, editingDecisions, editingItems, rawBill, fetchDetail, user]);
 
   const handleWorkflowSubmit = useCallback(async () => {
     if (!order?.order_no) {
