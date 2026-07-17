@@ -43,7 +43,7 @@ const FORM_ID = 'QM_InspectBill';
  * - FBILLNO            单据编号
  * - FDate              单据日期
  * - FBILLTYPEID.FNumber 单据类型编码（基础资料取编码，避免返回对象）
- * - FDocumentStatus    单据状态 (Z=创建, A=审核中, B=已审核, C=重新审核)
+ * - FDocumentStatus    单据状态 (Z=创建, A=待检, B=审批中, C=已完成)
  * - FMaterialId.FNumber/FName 分录物料编码/名称（单据体字段，直接用字段名.关联字段即可，无需 FEntity_ 前缀）
  *
  * 注意：
