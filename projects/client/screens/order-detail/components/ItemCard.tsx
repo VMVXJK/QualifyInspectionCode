@@ -92,6 +92,14 @@ export function ItemCard({
         </View>
       )}
 
+      {/* 目标值 */}
+      {item.target_val ? (
+        <View style={styles.row}>
+          <Text style={styles.label}>目标值</Text>
+          <Text style={[styles.readonly, styles.targetVal]}>{item.target_val}</Text>
+        </View>
+      ) : null}
+
       {/* 判定结果 */}
       {item.result && (
         <View style={styles.row}>
@@ -230,6 +238,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1E293B',
     textAlign: 'right',
+  },
+  targetVal: {
+    fontSize: 13,
+    color: '#475569',
+    textAlign: 'right',
+    flexShrink: 1,
   },
   pass: {
     color: '#16A34A',

@@ -89,6 +89,9 @@ export interface InspectBillEntry {
   FMaterialID?: KdBaseDataUnion;
   FMaterialName?: string; // 物料名称（关联携带）
   FMaterialModel?: string; // 规格型号
+  // 质检方案：兼容两种字段名和两种基础资料格式
+  FQCSchemeId?: KdBaseDataUnion;
+  FQCSCHEMEID?: KdBaseDataUnion;
   // 单位：兼容两种字段名和两种基础资料格式
   FUnitID?: KdBaseDataUnion;
   FUNITID?: KdBaseDataUnion;
@@ -210,6 +213,10 @@ export interface MaterialInfo {
   qualified_qty?: number;
   unqualified_qty?: number;
   inspect_result?: string;
+  /** 质检方案编码 */
+  qc_scheme_code?: string;
+  /** 质检方案名称 */
+  qc_scheme_name?: string;
 }
 
 export interface DecisionInfo {
@@ -242,6 +249,12 @@ export interface ItemInfo {
   inspect_instrument_name?: string;
   /** 检验项目里的缺陷等级（FDefectLevel1） */
   defect_level1?: string;
+  /** 检验方法编码（回传 Save 接口用，非仅展示） */
+  method_code?: string;
+  /** 检验仪器编码（回传 Save 接口用，非仅展示） */
+  instrument_code?: string;
+  /** 质量标准编码（回传 Save 接口用，非仅展示） */
+  quality_std_code?: string;
 }
 
 export interface DefectInfo {

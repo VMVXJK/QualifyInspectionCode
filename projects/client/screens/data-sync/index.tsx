@@ -17,6 +17,7 @@ import {
   syncInspectInstruments,
   syncInspectValueOptions,
   syncBillTypes,
+  syncQCSchemes,
 } from '@/api/kingdee/inspect';
 import { SaveDiagnosticsPanel } from '@/screens/order-detail/components/SaveDiagnosticsPanel';
 import type { SaveDiagnostics } from '@/screens/order-detail/types';
@@ -30,6 +31,7 @@ export default function DataSyncScreen() {
   const [syncingInstrument, setSyncingInstrument] = useState(false);
   const [syncingValue, setSyncingValue] = useState(false);
   const [syncingBillType, setSyncingBillType] = useState(false);
+  const [syncingQCScheme, setSyncingQCScheme] = useState(false);
 
   // 诊断面板状态（记录最后一次同步的信息）
   const [lastSyncDiagnostics, setLastSyncDiagnostics] = useState<SaveDiagnostics | null>(null);
@@ -185,6 +187,36 @@ export default function DataSyncScreen() {
     setSyncingBillType(false);
   }, []);
 
+  const handleSyncQCSchemes = useCallback(async () => {
+    setSyncingQCScheme(true);
+    setShowDiagnostics(true);
+
+    const result = await syncQCSchemes();
+
+    setLastSyncDiagnostics({
+      request: result.diagnostics.request,
+      response: result.diagnostics.response,
+      error: result.diagnostics.error,
+    });
+
+    if (result.success) {
+      Toast.show({
+        type: 'success',
+        text1: `已同步 ${result.count} 条质检方案`,
+        position: 'bottom',
+      });
+    } else {
+      Toast.show({
+        type: 'error',
+        text1: '同步失败',
+        text2: result.diagnostics.error || '未知错误',
+        position: 'bottom',
+      });
+    }
+
+    setSyncingQCScheme(false);
+  }, []);
+
   return (
     <Screen>
       <View style={styles.container}>
@@ -244,6 +276,14 @@ export default function DataSyncScreen() {
                 subtitle="JYD 编码 ↔ 单据类型名称"
                 onPress={handleSyncBillTypes}
                 loading={syncingBillType}
+              />
+
+              <SyncButton
+                icon="clipboard-outline"
+                title="同步质检方案映射表"
+                subtitle="编码 ↔ 质检方案名称"
+                onPress={handleSyncQCSchemes}
+                loading={syncingQCScheme}
               />
             </View>
           </View>

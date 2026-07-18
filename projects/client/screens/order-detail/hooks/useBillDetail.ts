@@ -99,12 +99,12 @@ export function useBillDetail(orderId?: string, orderNo?: string): UseBillDetail
       setItems(local.items as LocalItem[]);
       setDefects(local.defects as LocalDefect[]);
 
-      // View 接口在部分环境下不带出分录物料的 FName/规格型号（取决于金蝶后台字段关联配置），
+      // View 接口在部分环境下不带出分录物料的 FName/规格型号/质检方案（取决于金蝶后台字段关联配置），
       // 此时用 BillQuery 按单据内码补一次查询兜底
-      if (local.material && (!local.material.material_name || !local.material.material_model) && local.order.id) {
+      if (local.material && (!local.material.material_name || !local.material.material_model || !local.material.qc_scheme_code) && local.order.id) {
         fetchMaterialInfoByBillId(local.order.id)
           .then((info) => {
-            if (info?.material_name || info?.material_model) {
+            if (info?.material_name || info?.material_model || info?.qc_scheme_code) {
               setMaterial((prev) =>
                 prev
                   ? {
@@ -112,6 +112,8 @@ export function useBillDetail(orderId?: string, orderNo?: string): UseBillDetail
                       material_name: prev.material_name || info.material_name || '',
                       material_code: prev.material_code || info.material_code || '',
                       material_model: prev.material_model || info.material_model,
+                      qc_scheme_code: prev.qc_scheme_code || info.qc_scheme_code,
+                      qc_scheme_name: prev.qc_scheme_name || info.qc_scheme_name,
                     }
                   : prev
               );

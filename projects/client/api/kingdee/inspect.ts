@@ -385,13 +385,13 @@ export async function viewInspectBill(
  */
 export async function fetchMaterialInfoByBillId(
   billId: string
-): Promise<{ material_code?: string; material_name?: string; material_model?: string } | undefined> {
+): Promise<{ material_code?: string; material_name?: string; material_model?: string; qc_scheme_code?: string; qc_scheme_name?: string } | undefined> {
   if (!billId) return undefined;
 
   const requestBody = {
     data: {
       FormId: FORM_ID,
-      FieldKeys: 'FMaterialId.FNumber,FMaterialId.FName,FMaterialModel',
+      FieldKeys: 'FMaterialId.FNumber,FMaterialId.FName,FMaterialModel,FQCSchemeId.FNumber,FQCSchemeId.FName',
       FilterString: `FID = ${Number(billId)}`,
       OrderString: '',
       StartRow: 0,
@@ -415,6 +415,8 @@ export async function fetchMaterialInfoByBillId(
       material_code: first[0] ? String(first[0]) : undefined,
       material_name: first[1] ? String(first[1]) : undefined,
       material_model: first[2] ? String(first[2]) : undefined,
+      qc_scheme_code: first[3] ? String(first[3]) : undefined,
+      qc_scheme_name: first[4] ? String(first[4]) : undefined,
     };
   }
   if (typeof first === 'object') {
@@ -423,6 +425,8 @@ export async function fetchMaterialInfoByBillId(
       material_code: rec['FMaterialId.FNumber'] ? String(rec['FMaterialId.FNumber']) : undefined,
       material_name: rec['FMaterialId.FName'] ? String(rec['FMaterialId.FName']) : undefined,
       material_model: rec['FMaterialModel'] ? String(rec['FMaterialModel']) : undefined,
+      qc_scheme_code: rec['FQCSchemeId.FNumber'] ? String(rec['FQCSchemeId.FNumber']) : undefined,
+      qc_scheme_name: rec['FQCSchemeId.FName'] ? String(rec['FQCSchemeId.FName']) : undefined,
     };
   }
   return undefined;
@@ -439,8 +443,112 @@ function shouldUseFNumber(fieldName: string): boolean {
 }
 
 /* ════════════════════════════════════════
-   2. 保存/更新检验结果（Save）
+   1b. 查询质检方案详情（View → 检验项目表体）
    ════════════════════════════════════════ */
+
+export interface QCSchemeItem {
+  item_code: string;
+  item_name: string;
+  analysis_method: string;
+  target_val?: string;
+  upper_limit?: string;
+  lower_limit?: string;
+  method_code?: string;
+  method_name?: string;
+  instrument_code?: string;
+  instrument_name?: string;
+  quality_std_code?: string;
+  quality_std_name?: string;
+}
+
+/**
+ * 查询质检方案（QM_QCScheme）的检验项目表体
+ * 选中方案后调用，返回该方案下所有检验项目供填入检验单分录
+ */
+export async function viewQCScheme(number: string): Promise<QCSchemeItem[]> {
+  const requestBody = {
+    formid: 'QM_QCScheme',
+    data: {
+      CreateOrgId: 0,
+      Number: number,
+      Id: '',
+      IsSortBySeq: 'false',
+    },
+  };
+
+  const result = await callKingdeePost<unknown>('View', requestBody);
+  const scheme = extractViewResult<Record<string, unknown>>(result);
+
+  const entityArr = (scheme.Entity || scheme.FEntity) as unknown[];
+  if (!Array.isArray(entityArr) || entityArr.length === 0) return [];
+
+  return entityArr.map((row) => {
+    const r = row as Record<string, unknown>;
+
+    const itemBase = resolveBaseData(r.InspectItemId);
+    const methodBase = resolveBaseData(r.InspectMethodId);
+    const instrumentBase = resolveBaseData(r.InspectInstrumentId);
+    const qualityStdBase = resolveBaseData(r.QualityStdId);
+
+    // 分析方法编码：1=定量, 2=定性, 3=其他
+    const analysisRaw = String(r.AnalysisMethod ?? '');
+    const analysisMethod =
+      analysisRaw === '1' ? '定量' :
+      analysisRaw === '2' ? '定性' :
+      analysisRaw === '3' ? '其他' :
+      analysisRaw;
+
+    // 按分析方法取对应的目标值/上下限字段
+    let targetVal: string | undefined;
+    let upperLimit: string | undefined;
+    let lowerLimit: string | undefined;
+
+    if (analysisRaw === '1') {
+      // 定量：数值字段
+      const tv = r.TargetValQ !== undefined && r.TargetValQ !== null ? String(r.TargetValQ) : undefined;
+      const uv = r.UpLimitQ !== undefined && r.UpLimitQ !== null ? String(r.UpLimitQ) : undefined;
+      const lv = r.DownLimitQ !== undefined && r.DownLimitQ !== null ? String(r.DownLimitQ) : undefined;
+      targetVal = tv && tv !== '0' ? tv : undefined;
+      upperLimit = uv && uv !== '0' ? uv : undefined;
+      lowerLimit = lv && lv !== '0' ? lv : undefined;
+    } else if (analysisRaw === '2') {
+      // 定性：基础资料对象
+      const targetB = resolveBaseData(r.TargetValB);
+      targetVal = targetB.name || targetB.number;
+    } else {
+      // 其他：文本字段
+      targetVal = r.TargetValT ? String(r.TargetValT) : undefined;
+    }
+
+    // 兜底：尝试通用 TargetVal 文本字段
+    if (!targetVal) {
+      targetVal = r.TargetVal ? String(r.TargetVal) : undefined;
+    }
+    if (!upperLimit) {
+      upperLimit = r.UpLimit ? String(r.UpLimit) : undefined;
+    }
+    if (!lowerLimit) {
+      lowerLimit = r.DownLimit ? String(r.DownLimit) : undefined;
+    }
+
+    return {
+      item_code: itemBase.number || '',
+      item_name: itemBase.name || '',
+      analysis_method: analysisMethod,
+      target_val: targetVal,
+      upper_limit: upperLimit,
+      lower_limit: lowerLimit,
+      method_code: methodBase.number,
+      method_name: methodBase.name,
+      instrument_code: instrumentBase.number,
+      instrument_name: instrumentBase.name,
+      quality_std_code: qualityStdBase.number,
+      quality_std_name: qualityStdBase.name,
+    };
+  }).filter((it) => it.item_code);
+}
+
+
 
 /* ════════════════════════════════════════
    2. 同步检验方法映射表（BillQuery → AsyncStorage）
@@ -1005,6 +1113,117 @@ export async function loadBillTypeMapFromStorage(): Promise<Record<string, strin
   return {};
 }
 
+/* ════════════════════════════════════════
+   9. 同步质检方案映射表（BillQuery → AsyncStorage）
+   ════════════════════════════════════════ */
+
+const QC_SCHEME_MAP_STORAGE_KEY = '__sync_qc_scheme_map';
+const QM_QCSCHEME_FORM_ID = 'QM_QCScheme';
+const QC_SCHEME_FIELD_KEYS = ['FNumber', 'FName'].join(',');
+
+/**
+ * 从金蝶 BillQuery 拉取质检方案基础资料（编码+名称）
+ * 并持久化到 AsyncStorage，供 getQCSchemeName 动态使用
+ */
+export async function syncQCSchemes(): Promise<{
+  success: boolean;
+  count: number;
+  diagnostics: SyncDiagnostics;
+}> {
+  const requestBody = {
+    data: {
+      FormId: QM_QCSCHEME_FORM_ID,
+      FieldKeys: QC_SCHEME_FIELD_KEYS,
+      FilterString: '',
+      OrderString: 'FNumber',
+      StartRow: 0,
+      Limit: 2000,
+    },
+  };
+
+  let result: unknown;
+  let responseError: string | undefined;
+
+  try {
+    result = await callKingdeePost<unknown>('BillQuery', requestBody);
+  } catch (err) {
+    responseError = err instanceof Error ? err.message : '同步质检方案请求失败';
+    return {
+      success: false,
+      count: 0,
+      diagnostics: { request: requestBody, response: null, error: responseError },
+    };
+  }
+
+  const rows = parseBillQueryRows(result);
+  const map: Record<string, string> = {};
+
+  for (const row of rows) {
+    let code: string | undefined;
+    let name: string | undefined;
+
+    if (Array.isArray(row)) {
+      code = String(row[0] ?? '');
+      name = String(row[1] ?? '');
+    } else if (row && typeof row === 'object') {
+      const rec = row as Record<string, unknown>;
+      code = String(rec.FNumber ?? rec.FNUMBER ?? rec.fnumber ?? '');
+      name = String(rec.FName ?? rec.FNAME ?? rec.fname ?? '');
+    }
+
+    if (code && name) {
+      map[code] = name;
+    }
+  }
+
+  const count = Object.keys(map).length;
+
+  if (count === 0) {
+    return {
+      success: false,
+      count: 0,
+      diagnostics: {
+        request: requestBody,
+        response: result,
+        error: '未从金蝶获取到任何质检方案数据（返回为空或格式异常）',
+      },
+    };
+  }
+
+  try {
+    await AsyncStorage.setItem(QC_SCHEME_MAP_STORAGE_KEY, JSON.stringify(map));
+  } catch (storageErr) {
+    const msg = storageErr instanceof Error ? storageErr.message : '保存映射表到本地存储失败';
+    return {
+      success: false,
+      count,
+      diagnostics: { request: requestBody, response: result, error: msg },
+    };
+  }
+
+  return {
+    success: true,
+    count,
+    diagnostics: { request: requestBody, response: result },
+  };
+}
+
+/** 从 AsyncStorage 读取已同步的质检方案映射表 */
+export async function loadQCSchemeMapFromStorage(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(QC_SCHEME_MAP_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return parsed as Record<string, string>;
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return {};
+}
+
 /** 统一解析 BillQuery 返回结果为对象数组 */
 function parseBillQueryRows(raw: unknown): unknown[] {
   if (!raw) return [];
@@ -1185,6 +1404,7 @@ export async function submitInspectionResult(params: {
   defects?: DefectInfo[];
   decisions?: Array<{ entryId: string } & DecisionInfo>;
   rawBill?: InspectBill;
+  qcSchemeCode?: string; // 本次选中的质检方案编码（若有则回传至 FQCSchemeId）
 }): Promise<{
   success: boolean;
   diagnostics: {
@@ -1195,7 +1415,7 @@ export async function submitInspectionResult(params: {
     fEntityDiagnostics?: unknown;
   };
 }> {
-  const { billId, inspector, billResult, entryId, items, defects, decisions, rawBill } = params;
+  const { billId, inspector, billResult, entryId, items, defects, decisions, rawBill, qcSchemeCode } = params;
 
   // 1. 获取正确的 FEntryID（优先级：显式传入 > decisions > rawBill > 兜底）
   // 注意：空字符串 "" 也视为无效，使用 || 而非 ??
@@ -1296,12 +1516,16 @@ export async function submitInspectionResult(params: {
     FEntryID: effectiveEntryId,
   };
 
+  // 若本次选中了质检方案，回传至分录的 FQCSchemeId 字段
+  if (qcSchemeCode) {
+    modelEntry.FQCSchemeId = { FNUMBER: qcSchemeCode };
+  }
+
   // 3.1 检验项目（FItemDetail）
   if (items && items.length > 0) {
     modelEntry.FItemDetail = items.map((it) => {
       const detailId = it.detail_id ?? '0';
 
-      // 检验结果编码：合格 = "1"，不合格 = "2"
       const resultText = it.result ?? autoJudge(it.inspect_val ?? '', it.upper_limit, it.lower_limit);
       const resultCode = resultText === '不合格' ? '2' : '1';
 
@@ -1325,6 +1549,11 @@ export async function submitInspectionResult(params: {
       } else if (method) {
         detail.FInspectValT = val;
       }
+
+      // 回传检验方法、检验仪器、质量标准编码（仅当 ItemInfo 携带对应编码时）
+      if (it.method_code) detail.FInspectMethodId = { FNUMBER: it.method_code };
+      if (it.instrument_code) detail.FInspectInstrumentId = { FNUMBER: it.instrument_code };
+      if (it.quality_std_code) detail.FQualityStdId = { FNUMBER: it.quality_std_code };
 
       return detail;
     });
@@ -1854,6 +2083,7 @@ export function convertBillToLocal(bill: InspectBill): {
   const matRec = materialSource as unknown as Record<string, unknown>;
   const matBase = pickBaseData(matRec, ['FMATERIALID', 'FMaterialID', 'MaterialID']);
   const unitBase = pickBaseData(matRec, ['FUnitID', 'FUNITID', 'UnitID']);
+  const qcSchemeBase = pickBaseData(matRec, ['FQCSchemeId', 'FQCSCHEMEID', 'QCSchemeId']);
 
   const material: MaterialInfo | undefined = materialSource
     ? {
@@ -1868,6 +2098,8 @@ export function convertBillToLocal(bill: InspectBill): {
         qualified_qty: pickNumber(matRec, ['FQualifiedQty', 'QualifiedQty']),
         unqualified_qty: pickNumber(matRec, ['FUnQualifiedQty', 'UnQualifiedQty']),
         inspect_result: pickBaseData(matRec, ['FInspectResult', 'InspectResult']).name,
+        qc_scheme_code: qcSchemeBase.number,
+        qc_scheme_name: qcSchemeBase.name,
       }
     : undefined;
 
@@ -2009,11 +2241,13 @@ export function convertBillToLocal(bill: InspectBill): {
       analysis_method: normalizedMethod,
       defect_level: pickString(itRec, ['FDefectLevel', 'DefectLevel']),
       inspect_standard: pickString(itRec, ['FInspectStandard', 'InspectStandard']),
-      // 新增字段
       inspect_result1: inspectResult1,
       inspect_method_name: methodBase.name || methodBase.number,
       inspect_instrument_name: instrumentBase.name || instrumentBase.number,
       defect_level1: defectLevel1,
+      method_code: methodBase.number,
+      instrument_code: instrumentBase.number,
+      quality_std_code: pickBaseData(itRec, ['FQualityStdId', 'FQUALITYSTDID', 'QualityStdId']).number,
     };
   });
 

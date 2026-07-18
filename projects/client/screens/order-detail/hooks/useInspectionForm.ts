@@ -18,6 +18,7 @@ interface UseInspectionFormParams {
 }
 
 interface UseInspectionFormResult {
+  items: LocalItem[];
   editingItems: Record<string, string>;
   editingMethods: Record<string, string>;
   editingInstruments: Record<string, string>;
@@ -38,6 +39,12 @@ interface UseInspectionFormResult {
   handleSubmit: () => Promise<void>;
   handleWorkflowSubmit: () => Promise<void>;
   defects: LocalDefect[];
+  /** 选中质检方案后用该方案的检验项目整体替换当前列表 */
+  replaceItemsFromScheme: (newItems: LocalItem[], schemeCode: string, schemeName: string) => void;
+  /** 当前选中的质检方案编码（若本次已替换过） */
+  selectedSchemeCode: string | null;
+  /** 当前选中的质检方案名称 */
+  selectedSchemeName: string | null;
 }
 
 /**
@@ -47,6 +54,13 @@ interface UseInspectionFormResult {
 export function useInspectionForm(params: UseInspectionFormParams): UseInspectionFormResult {
   const { order, material, items, defects: initialDefects, decisions: initialDecisions, rawBill, fetchDetail } = params;
   const { user } = useAuth();
+
+  // 本地 items 状态（可被质检方案选择整体替换）
+  const [localItems, setLocalItems] = useState<LocalItem[]>(items);
+
+  // 当前选中的质检方案（本次会话内选择的，与金蝶拉取的原始方案分开）
+  const [selectedSchemeCode, setSelectedSchemeCode] = useState<string | null>(null);
+  const [selectedSchemeName, setSelectedSchemeName] = useState<string | null>(null);
 
   // 检测值编辑态：detailId -> inspectVal
   const [editingItems, setEditingItems] = useState<Record<string, string>>(() => {
@@ -84,6 +98,11 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
   // 保存诊断
   const [saveDiagnostics, setSaveDiagnostics] = useState<SaveDiagnostics | null>(null);
   const [showSaveDiagnostics, setShowSaveDiagnostics] = useState(false);
+
+  // 当外部数据刷新时（如拉取新数据后）同步本地 items
+  useEffect(() => {
+    setLocalItems(items);
+  }, [items]);
 
   // 当外部数据刷新时同步状态
   useEffect(() => {
@@ -178,13 +197,16 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     if (!ok) return;
 
     try {
-      const mappedItems = items.map((it) => ({
+      const mappedItems = localItems.map((it) => ({
         detail_id: it.detail_id,
         item_id: it.item_id,
         inspect_val: editingItems[it.detail_id || it.item_id] ?? it.inspect_val ?? '',
         upper_limit: it.upper_limit,
         lower_limit: it.lower_limit,
         analysis_method: it.analysis_method,
+        method_code: it.method_code,
+        instrument_code: it.instrument_code,
+        quality_std_code: it.quality_std_code,
       }));
 
       const mappedDefects = defects.map((d) => ({
@@ -219,6 +241,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
         defects: mappedDefects,
         decisions: mappedDecisions,
         rawBill: rawBill as any,
+        qcSchemeCode: selectedSchemeCode ?? undefined,
       });
 
       setSaveDiagnostics(result.diagnostics as SaveDiagnostics);
@@ -252,7 +275,25 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
         detail: message,
       });
     }
-  }, [order, material, items, defects, editingDecisions, editingItems, rawBill, fetchDetail, user]);
+  }, [order, material, localItems, defects, editingDecisions, editingItems, rawBill, fetchDetail, user]);
+
+  const replaceItemsFromScheme = useCallback((newItems: LocalItem[], schemeCode: string, schemeName: string) => {
+    setLocalItems(newItems);
+    setSelectedSchemeCode(schemeCode);
+    setSelectedSchemeName(schemeName);
+    const initVals: Record<string, string> = {};
+    const initMethods: Record<string, string> = {};
+    const initInstruments: Record<string, string> = {};
+    newItems.forEach((it) => {
+      const key = it.detail_id || it.item_id;
+      initVals[key] = it.inspect_val || '';
+      initMethods[key] = it.inspect_method_name || '';
+      initInstruments[key] = it.inspect_instrument_name || '';
+    });
+    setEditingItems(initVals);
+    setEditingMethods(initMethods);
+    setEditingInstruments(initInstruments);
+  }, []);
 
   const handleWorkflowSubmit = useCallback(async () => {
     if (!order?.order_no) {
@@ -284,6 +325,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
   }, [order, fetchDetail]);
 
   return {
+    items: localItems,
     editingItems,
     editingMethods,
     editingInstruments,
@@ -304,5 +346,8 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     handleSubmit,
     handleWorkflowSubmit,
     defects,
+    replaceItemsFromScheme,
+    selectedSchemeCode,
+    selectedSchemeName,
   };
 }

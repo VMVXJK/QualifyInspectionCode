@@ -15,6 +15,9 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import { useBillDetail } from './hooks/useBillDetail';
 import { useInspectionForm } from './hooks/useInspectionForm';
+import { viewQCScheme } from '@/api/kingdee/inspect';
+import { showError } from '@/utils/toast';
+import { showConfirm } from '@/utils/alert';
 
 import { Section } from './components/Section';
 import { InfoRow } from './components/InfoRow';
@@ -27,6 +30,7 @@ import { DefectModal } from './components/DefectModal';
 import { SelectModal } from './components/SelectModal';
 import type { SelectModalOption } from './components/SelectModal';
 import { QualitativeValueModal } from './components/QualitativeValueModal';
+import { QCSchemeSelectModal } from './components/QCSchemeSelectModal';
 import { SaveDiagnosticsPanel } from './components/SaveDiagnosticsPanel';
 
 import { STATUS_MAP, getUsePolicyOptions } from './constants';
@@ -34,6 +38,7 @@ import { getQualitativeOptions, loadValueMapFromStorage } from './data/qualitati
 import { INSPECT_METHOD_NAME_MAP, loadMethodMapFromStorage } from './data/method-name-map';
 import { INSPECT_INSTRUMENT_NAME_MAP, loadInstrumentMapFromStorage } from './data/instrument-name-map';
 import { INSPECT_ITEM_NAME_MAP, loadItemMapFromStorage } from './data/item-name-map';
+import { loadQCSchemeMapFromStorageLocal, getQCSchemeName, getCachedQCSchemeMap } from './data/qc-scheme-map';
 import type { LocalDefect } from './types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
@@ -60,6 +65,10 @@ export default function OrderDetailScreen() {
   const [showInstrumentModal, setShowInstrumentModal] = useState(false);
   const [instrumentDetailId, setInstrumentDetailId] = useState('');
   const [instrumentValue, setInstrumentValue] = useState('');
+
+  // 质检方案选择器状态
+  const [showQCSchemeModal, setShowQCSchemeModal] = useState(false);
+  const [qcSchemeLoading, setQCSchemeLoading] = useState(false);
 
   // 方法和仪器选项数据
   const METHOD_OPTIONS = Object.entries(INSPECT_METHOD_NAME_MAP).map(([code, text]) => ({ code, text }));
@@ -88,6 +97,9 @@ export default function OrderDetailScreen() {
       /* ignore */
     });
     loadInstrumentMapFromStorage().catch(() => {
+      /* ignore */
+    });
+    loadQCSchemeMapFromStorageLocal().catch(() => {
       /* ignore */
     });
     loadValueMapFromStorage()
@@ -127,6 +139,45 @@ export default function OrderDetailScreen() {
     form.handleInstrumentChange(instrumentDetailId, code);
     setShowInstrumentModal(false);
   }, [instrumentDetailId, form]);
+
+  const handleQCSchemeSelect = useCallback(async (code: string, name: string) => {
+    setShowQCSchemeModal(false);
+    if (form.items.length > 0) {
+      const ok = await showConfirm(
+        '切换质检方案',
+        `当前已有 ${form.items.length} 条检验项目，切换质检方案将覆盖现有检验项目，是否继续？`
+      );
+      if (!ok) return;
+    }
+    setQCSchemeLoading(true);
+    try {
+      const schemeItems = await viewQCScheme(code);
+      const newLocalItems = schemeItems.map((si) => ({
+        detail_id: '0',
+        item_id: si.item_code,
+        item_name: si.item_name,
+        analysis_method: si.analysis_method,
+        target_val: si.target_val,
+        upper_limit: si.upper_limit !== undefined ? Number(si.upper_limit) || undefined : undefined,
+        lower_limit: si.lower_limit !== undefined ? Number(si.lower_limit) || undefined : undefined,
+        inspect_method_name: si.method_name || si.method_code,
+        inspect_instrument_name: si.instrument_name || si.instrument_code,
+        method_code: si.method_code,
+        instrument_code: si.instrument_code,
+        quality_std_code: si.quality_std_code,
+        inspect_val: '',
+        result: undefined,
+        inspect_result1: '',
+        defect_level1: '',
+      }));
+      form.replaceItemsFromScheme(newLocalItems, code, name);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '加载质检方案失败';
+      showError(msg);
+    } finally {
+      setQCSchemeLoading(false);
+    }
+  }, [form]);
 
   // 通用选择器 Modal 状态
   const [showSelectModal, setShowSelectModal] = useState(false);
@@ -239,6 +290,12 @@ export default function OrderDetailScreen() {
           <InfoRow label="物料编码 *" value={material?.material_code} />
           <InfoRow label="物料名称" value={material?.material_name} />
           <InfoRow label="规格型号" value={material?.material_model} />
+          <SelectField
+            label="质检方案"
+            value={form.selectedSchemeName || form.selectedSchemeCode || material?.qc_scheme_name || getQCSchemeName(material?.qc_scheme_code) || material?.qc_scheme_code || ''}
+            placeholder="点击选择质检方案"
+            onPress={() => setShowQCSchemeModal(true)}
+          />
           <InfoRow label="单位 *" value={material?.unit} />
           <InfoRow label="检验数量" value={material?.inspect_qty?.toString()} />
           <InfoRow label="合格数" value={material?.qualified_qty?.toString()} />
@@ -290,10 +347,14 @@ export default function OrderDetailScreen() {
 
         {/* 检验项目 */}
         <Section title="检验项目">
-          {items.length === 0 ? (
-            <Empty text="暂无检验项目" />
+          {qcSchemeLoading ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text style={{ color: '#64748B', fontSize: 14 }}>正在加载质检方案检验项目...</Text>
+            </View>
+          ) : form.items.length === 0 ? (
+            <Empty text="暂无检验项目，请在上方选择质检方案" />
           ) : (
-            items.map((item) => (
+            form.items.map((item) => (
               <ItemCard
                 key={item.detail_id || item.item_id}
                 item={item}
@@ -430,6 +491,20 @@ export default function OrderDetailScreen() {
         options={INSTRUMENT_OPTIONS}
         onSelect={handleInstrumentSelect}
         onClose={() => setShowInstrumentModal(false)}
+      />
+
+      {/* 质检方案选择器 Modal */}
+      <QCSchemeSelectModal
+        visible={showQCSchemeModal}
+        value={form.selectedSchemeCode || material?.qc_scheme_code || ''}
+        schemes={getCachedQCSchemeMap() || {}}
+        loading={qcSchemeLoading}
+        onSelect={handleQCSchemeSelect}
+        onClose={() => setShowQCSchemeModal(false)}
+        onGoSync={() => {
+          setShowQCSchemeModal(false);
+          router.push('/data-sync');
+        }}
       />
     </Screen>
   );
