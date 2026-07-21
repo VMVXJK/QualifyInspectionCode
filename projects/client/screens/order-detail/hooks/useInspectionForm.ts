@@ -216,6 +216,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
         defect_level: d.defect_level,
         defect_reason: d.defect_reason,
         defect_result: d.defect_result,
+        defect_memo: d.defect_memo,
       }));
 
       const mappedDecisions = editingDecisions.length > 0

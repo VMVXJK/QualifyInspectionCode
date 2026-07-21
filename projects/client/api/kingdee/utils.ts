@@ -53,7 +53,7 @@ export function autoJudge(
  * - 多语言数组（View 接口实测格式）：[{ Key: 2052, Value: "中文" }, { Key: 1033, Value: "English" }]
  *   2052 = 简体中文 LCID，优先取该项；取不到则回退第一项
  */
-function resolveMultiLangField(obj: Record<string, unknown>, candidateKeys: string[]): string | undefined {
+export function resolveMultiLangField(obj: Record<string, unknown>, candidateKeys: string[]): string | undefined {
   for (const key of candidateKeys) {
     const val = obj[key];
     if (typeof val === 'string') return val;

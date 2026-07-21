@@ -414,6 +414,7 @@ export default function OrderDetailScreen() {
                 </View>
                 {d.defect_reason ? <Text style={styles.defectMeta}>原因: {d.defect_reason}</Text> : null}
                 {d.defect_result ? <Text style={styles.defectMeta}>后果: {d.defect_result}</Text> : null}
+                {d.defect_memo ? <Text style={styles.defectMemo}>备注: {d.defect_memo}</Text> : null}
               </View>
             ))
           )}
@@ -559,6 +560,7 @@ const styles = StyleSheet.create({
   iconBtn: { padding: 2 },
   defectMetaRow: { flexDirection: 'row', gap: 12, marginBottom: 2 },
   defectMeta: { fontSize: 12, color: '#64748B' },
+  defectMemo: { fontSize: 12, color: '#64748B', marginTop: 4, lineHeight: 18 },
 
   /* Result Summary */
   resultSummary: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 8, flexWrap: 'wrap' },

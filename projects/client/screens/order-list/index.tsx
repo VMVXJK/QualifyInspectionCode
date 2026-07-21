@@ -9,11 +9,12 @@ import {
   Dimensions,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen } from '@/components/Screen';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { queryInspectBills } from '@/api/kingdee/inspect';
 import { useAuth } from '@/contexts/AuthContext';
@@ -69,7 +70,7 @@ export default function OrderListScreen() {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
 
   const router = useSafeRouter();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, isLoading: authLoading } = useAuth();
   const hasFetchedRef = useRef(false);
 
   /** 从本地缓存加载检验单列表（离线时也展示，仅标记为缓存） */
@@ -209,10 +210,6 @@ export default function OrderListScreen() {
     );
   }, [logout]);
 
-  const handleLogin = useCallback(() => {
-    router.push('/login');
-  }, [router]);
-
   const renderOrderCard = ({ item }: { item: InspectionOrder }) => {
     const status = STATUS_MAP[item.status] || STATUS_MAP.pending;
     const typeMeta = TYPE_MAP[item.type] || { label: item.type, color: '#64748B' };
@@ -263,6 +260,20 @@ export default function OrderListScreen() {
     </View>
   );
 
+  if (authLoading) {
+    return (
+      <Screen>
+        <View style={styles.authLoadingBox}>
+          <ActivityIndicator size="large" color="#2563EB" />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Redirect href="/login" />;
+  }
+
   if (!showList) {
     return (
       <Screen>
@@ -277,29 +288,14 @@ export default function OrderListScreen() {
           </View>
 
           {/* 登录/退出提示 */}
-          {isAuthenticated ? (
-            <TouchableOpacity style={styles.logoutBannerHome} onPress={handleLogout} activeOpacity={0.8}>
-              <Ionicons name="log-out-outline" size={22} color="#B91C1C" />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.logoutBannerHomeTitle}>已登录金蝶云星空</Text>
-                <Text style={styles.logoutBannerHomeSub}>点击此处退出当前账号</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#DC2626" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.loginBannerHome}
-              onPress={handleLogin}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="log-in-outline" size={22} color="#92400E" />
-              <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={styles.loginBannerHomeTitle}>未登录金蝶云星空</Text>
-                <Text style={styles.loginBannerHomeSub}>点击此处完成登录，同步检验单数据</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#D97706" />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={styles.logoutBannerHome} onPress={handleLogout} activeOpacity={0.8}>
+            <Ionicons name="log-out-outline" size={22} color="#B91C1C" />
+            <View style={{ flex: 1, marginLeft: 10 }}>
+              <Text style={styles.logoutBannerHomeTitle}>已登录金蝶云星空</Text>
+              <Text style={styles.logoutBannerHomeSub}>点击此处退出当前账号</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#DC2626" />
+          </TouchableOpacity>
 
           {/* 入口卡片 */}
           <View style={styles.grid}>
@@ -345,20 +341,13 @@ export default function OrderListScreen() {
         </View>
 
         {/* 登录/退出提示 */}
-        {isAuthenticated ? (
-          <View style={styles.logoutBanner}>
-            <Ionicons name="shield-checkmark-outline" size={18} color="#059669" />
-            <Text style={styles.logoutBannerText}>已登录金蝶云星空</Text>
-            <TouchableOpacity onPress={handleLogout} style={{ marginLeft: 'auto' }}>
-              <Text style={styles.logoutBannerAction}>退出</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.loginBanner}>
-            <Ionicons name="warning-outline" size={18} color="#D97706" />
-            <Text style={styles.loginBannerText}>未登录金蝶云星空，请先完成登录后再刷新数据</Text>
-          </View>
-        )}
+        <View style={styles.logoutBanner}>
+          <Ionicons name="shield-checkmark-outline" size={18} color="#059669" />
+          <Text style={styles.logoutBannerText}>已登录金蝶云星空</Text>
+          <TouchableOpacity onPress={handleLogout} style={{ marginLeft: 'auto' }}>
+            <Text style={styles.logoutBannerAction}>退出</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* 搜索 */}
         <View style={styles.searchPanel}>
@@ -464,21 +453,6 @@ const styles = StyleSheet.create({
   heroTitle: { fontSize: 24, fontWeight: '800', color: '#FFFFFF', letterSpacing: 1 },
   heroSub: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 6, letterSpacing: 2 },
 
-  /* ===== 首页登录提示 ===== */
-  loginBannerHome: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    marginHorizontal: PAD,
-    marginTop: 16,
-    padding: PAD,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  loginBannerHomeTitle: { fontSize: 15, fontWeight: '700', color: '#92400E' },
-  loginBannerHomeSub: { fontSize: 12, color: '#B45309', marginTop: 2 },
-
   /* ===== 首页退出提示 ===== */
   logoutBannerHome: {
     flexDirection: 'row',
@@ -547,18 +521,8 @@ const styles = StyleSheet.create({
   backBtn: { padding: 4 },
   pageTitle: { fontSize: 17, fontWeight: '700', color: '#1E293B' },
 
-  /* ===== 登录提示横幅 ===== */
-  loginBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: PAD,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FDE68A',
-  },
-  loginBannerText: { fontSize: 13, color: '#92400E', fontWeight: '600' },
+  /* ===== 认证中 ===== */
+  authLoadingBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 
   /* ===== 搜索 ===== */
   searchPanel: {

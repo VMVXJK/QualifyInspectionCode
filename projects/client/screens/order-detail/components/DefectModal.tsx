@@ -1,5 +1,5 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SelectField } from './SelectField';
 import { DecisionField } from './DecisionField';
@@ -100,6 +100,18 @@ export function DefectModal({
                 placeholder="请选择缺陷后果"
               />
             </View>
+            <View style={{ marginBottom: 12 }}>
+              <Text style={styles.label}>详细描述/备注</Text>
+              <TextInput
+                style={styles.memoInput}
+                value={editingDefect.defect_memo || ''}
+                onChangeText={(v) => onChange({ defect_memo: v })}
+                placeholder="请输入缺陷详细描述（选填）"
+                placeholderTextColor="#94A3B8"
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
           </ScrollView>
           <TouchableOpacity style={styles.saveBtn} onPress={onSave}>
             <Text style={styles.saveText}>保存</Text>
@@ -127,6 +139,17 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   title: { fontSize: 17, fontWeight: '700', color: '#1E293B' },
   label: { fontSize: 13, color: '#64748B', marginBottom: 4 },
+  memoInput: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 14,
+    color: '#1E293B',
+    backgroundColor: '#F8FAFC',
+    minHeight: 80,
+  },
   saveBtn: {
     backgroundColor: '#2563EB',
     borderRadius: 12,

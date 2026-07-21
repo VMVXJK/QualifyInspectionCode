@@ -168,6 +168,7 @@ export interface DefectDetail {
   // 缺陷后果（基础资料）：兼容两种格式
   FDefectResultId?: KdBaseDataUnion;
   FDefectResultID?: KdBaseDataUnion;
+  FDefectMemo?: string; // 缺陷详细描述/备注
 }
 
 /* ════════════════════════════════════════
@@ -264,4 +265,5 @@ export interface DefectInfo {
   defect_reason?: string;
   defect_level: string;
   defect_result?: string;
+  defect_memo?: string;
 }

@@ -85,6 +85,7 @@ export interface LocalDefect {
   defect_reason?: string;
   defect_level: string;
   defect_result?: string;
+  defect_memo?: string;
 }
 
 /** 保存诊断信息 */

@@ -15,6 +15,7 @@ import { Screen } from '@/components/Screen';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth, getRememberedCredentials } from '@/contexts/AuthContext';
+import { getKingdeeBaseUrl } from '@/api/kingdee/client';
 import { showSuccess, showError } from '@/utils/toast';
 
 const { height: SCREEN_H } = Dimensions.get('window');
@@ -61,8 +62,8 @@ export default function LoginScreen() {
         remember,
       });
       showSuccess('登录成功');
-      // 返回主界面（不是新跳转，防止套多层）
-      router.back();
+      // 强制登录门禁下，登录页可能是被 Redirect 换入的，导航栈无法回退，直接替换回首页
+      router.replace('/');
     } catch (error) {
       const message = error instanceof Error ? error.message : '登录失败';
       setErrorMsg(message);
@@ -182,7 +183,7 @@ export default function LoginScreen() {
 
           {/* 底部信息 */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>服务器：https://121.37.216.69</Text>
+            <Text style={styles.footerText}>服务器：{getKingdeeBaseUrl()}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

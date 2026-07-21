@@ -17,6 +17,7 @@ import {
   mapDocumentStatus,
   autoJudge,
   resolveBaseData,
+  resolveMultiLangField,
 } from './utils';
 import type {
   InspectBill,
@@ -1572,6 +1573,7 @@ export async function submitInspectionResult(params: {
         FDefectReasonId: d.defect_reason ? { FNUMBER: encodeDefectReason(d.defect_reason) || d.defect_reason } : { FNUMBER: '' },
         FDefectLevel: encodeDefectLevel(d.defect_level) || d.defect_level,
         FDefectResultId: d.defect_result ? { FNUMBER: encodeDefectResult(d.defect_result) || d.defect_result } : { FNUMBER: '' },
+        FDefectMemo: d.defect_memo || '',
       };
     });
   }
@@ -2273,6 +2275,7 @@ export function convertBillToLocal(bill: InspectBill): {
       defect_reason: decodeDefectReason(pickValue(dRec, ['FDefectReasonId', 'DefectReasonId'])),
       defect_level: decodeDefectLevel(pickValue(dRec, ['FDefectLevel', 'DefectLevel'])) || '',
       defect_result: decodeDefectResult(pickValue(dRec, ['FDefectResultId', 'DefectResultId'])),
+      defect_memo: resolveMultiLangField(dRec, ['FDefectMemo', 'DefectMemo']),
     };
   });
 
