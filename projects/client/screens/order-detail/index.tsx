@@ -300,8 +300,30 @@ export default function OrderDetailScreen() {
           <InfoRow label="检验数量" value={material?.inspect_qty?.toString()} />
           <InfoRow label="合格数" value={material?.qualified_qty?.toString()} />
           <InfoRow label="不合格数" value={material?.unqualified_qty?.toString()} />
+        </Section>
+
+        {/* 检验结果 */}
+        <Section title="检验结果">
           <View style={styles.resultSummary}>
-            <Text style={styles.resultLabel}>检验结果:</Text>
+            <Text style={styles.resultLabel}>整单结论:</Text>
+            {(() => {
+              const result = material?.inspect_result || '待检';
+              const resultColor = result === '合格' ? '#059669' : result === '不合格' ? '#DC2626' : '#94A3B8';
+              return (
+                <View style={[styles.resultBadge, { backgroundColor: resultColor + '15' }]}>
+                  <Text style={[styles.resultBadgeText, { color: resultColor }]}>{result}</Text>
+                </View>
+              );
+            })()}
+          </View>
+        </Section>
+
+        {/* 整体抽样 */}
+        <Section title="整体抽样">
+          <InfoRow label="检验数量" value={material?.inspect_qty?.toString()} />
+          <InfoRow label="合格数" value={material?.qualified_qty?.toString()} />
+          <InfoRow label="不合格数" value={material?.unqualified_qty?.toString()} />
+          <View style={styles.resultSummary}>
             {(() => {
               const result = material?.inspect_result || '待检';
               const resultColor = result === '合格' ? '#059669' : result === '不合格' ? '#DC2626' : '#94A3B8';
@@ -361,6 +383,7 @@ export default function OrderDetailScreen() {
                 inputVal={form.editingItems[item.detail_id || item.item_id] ?? item.inspect_val ?? ''}
                 methodVal={form.editingMethods[item.detail_id || item.item_id]}
                 instrumentVal={form.editingInstruments[item.detail_id || item.item_id]}
+                predictedResult={form.getItemResult(item)}
                 onChange={form.handleItemChange}
                 onPressSelect={(it) => {
                   setQualitativeDetailId(it.detail_id || it.item_id);

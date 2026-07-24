@@ -11,6 +11,8 @@ interface ItemCardProps {
   inputVal: string;
   methodVal?: string;
   instrumentVal?: string;
+  /** 客户端根据检测值+上下限实时预判的结果（合格/不合格/待检），尚未提交保存前用此值兜底展示 */
+  predictedResult?: string;
   onChange: (detailId: string, val: string) => void;
   onPressSelect?: (item: LocalItem) => void;
   onPressMethodSelect?: (item: LocalItem) => void;
@@ -22,6 +24,7 @@ export function ItemCard({
   inputVal,
   methodVal,
   instrumentVal,
+  predictedResult,
   onChange,
   onPressSelect,
   onPressMethodSelect,
@@ -30,11 +33,15 @@ export function ItemCard({
   const method = (item.analysis_method || '').trim();
   const isQualitative = method.includes('定性');
 
+  // 判定结果：优先使用金蝶已保存的结果（inspect_result1），未保存时用客户端实时预判兜底
+  const confirmedResult = item.inspect_result1;
+  const displayResult = confirmedResult || predictedResult || '待检';
+  const isConfirmed = !!confirmedResult;
+
   // 检验结果标签样式
   const resultMeta = (() => {
-    const r = item.inspect_result1;
-    if (r === '合格') return { label: '合格', color: '#059669', bg: '#D1FAE5' };
-    if (r === '不合格') return { label: '不合格', color: '#DC2626', bg: '#FEE2E2' };
+    if (displayResult === '合格') return { label: '合格', color: '#059669', bg: '#D1FAE5' };
+    if (displayResult === '不合格') return { label: '不合格', color: '#DC2626', bg: '#FEE2E2' };
     return null;
   })();
 
@@ -101,20 +108,19 @@ export function ItemCard({
       ) : null}
 
       {/* 判定结果 */}
-      {item.result && (
-        <View style={styles.row}>
-          <Text style={styles.label}>判定结果</Text>
-          <Text
-            style={[
-              styles.readonly,
-              item.result === '合格' && styles.pass,
-              item.result === '不合格' && styles.fail,
-            ]}
-          >
-            {item.result}
-          </Text>
-        </View>
-      )}
+      <View style={styles.row}>
+        <Text style={styles.label}>判定结果</Text>
+        <Text
+          style={[
+            styles.readonly,
+            displayResult === '合格' && styles.pass,
+            displayResult === '不合格' && styles.fail,
+          ]}
+        >
+          {displayResult}
+          {!isConfirmed && displayResult !== '待检' ? '（预判）' : ''}
+        </Text>
+      </View>
 
       {/* 检验方法 */}
       <View style={styles.row}>

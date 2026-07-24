@@ -18,6 +18,7 @@ import {
   autoJudge,
   resolveBaseData,
   resolveMultiLangField,
+  decodeInspectResultCode,
 } from './utils';
 import type {
   InspectBill,
@@ -2086,6 +2087,16 @@ export function convertBillToLocal(bill: InspectBill): {
   const matBase = pickBaseData(matRec, ['FMATERIALID', 'FMaterialID', 'MaterialID']);
   const unitBase = pickBaseData(matRec, ['FUnitID', 'FUNITID', 'UnitID']);
   const qcSchemeBase = pickBaseData(matRec, ['FQCSchemeId', 'FQCSCHEMEID', 'QCSchemeId']);
+  const matQualifiedQty = pickNumber(matRec, ['FQualifiedQty', 'QualifiedQty']);
+  const matUnqualifiedQty = pickNumber(matRec, ['FUnQualifiedQty', 'UnQualifiedQty']);
+  // 检验结果（FInspectResult）为编码值（1=合格/2=不合格），解析失败时按合格数/不合格数推导
+  const matInspectResult =
+    decodeInspectResultCode(pickValue(matRec, ['FInspectResult', 'InspectResult'])) ??
+    (matUnqualifiedQty !== undefined || matQualifiedQty !== undefined
+      ? (matUnqualifiedQty ?? 0) > 0
+        ? '不合格'
+        : '合格'
+      : undefined);
 
   const material: MaterialInfo | undefined = materialSource
     ? {
@@ -2097,9 +2108,9 @@ export function convertBillToLocal(bill: InspectBill): {
           matBase.specification || pickString(matRec, ['FMaterialModel', 'MaterialModel']),
         unit: unitBase.number || '',
         inspect_qty: pickNumber(matRec, ['FINSPECTQTY', 'FInspectQty', 'InspectQty']) ?? 0,
-        qualified_qty: pickNumber(matRec, ['FQualifiedQty', 'QualifiedQty']),
-        unqualified_qty: pickNumber(matRec, ['FUnQualifiedQty', 'UnQualifiedQty']),
-        inspect_result: pickBaseData(matRec, ['FInspectResult', 'InspectResult']).name,
+        qualified_qty: matQualifiedQty,
+        unqualified_qty: matUnqualifiedQty,
+        inspect_result: matInspectResult,
         qc_scheme_code: qcSchemeBase.number,
         qc_scheme_name: qcSchemeBase.name,
       }
@@ -2237,7 +2248,7 @@ export function convertBillToLocal(bill: InspectBill): {
       item_name: itemName,
       target_val: pickString(itRec, ['FTargetVal', 'TargetVal']),
       inspect_val: inspectVal,
-      result: pickString(itRec, ['FInspectResult1', 'InspectResult1']),
+      result: inspectResult1,
       upper_limit: pickNumber(itRec, ['FUpperLimit', 'UpperLimit']),
       lower_limit: pickNumber(itRec, ['FLowerLimit', 'LowerLimit']),
       analysis_method: normalizedMethod,

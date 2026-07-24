@@ -46,6 +46,17 @@ export function autoJudge(
   return '合格';
 }
 
+/** 解析金蝶检验结果编码：1=合格，2=不合格，其他/无法识别时返回 undefined */
+export function decodeInspectResultCode(raw: unknown): string | undefined {
+  if (raw == null) return undefined;
+  if (typeof raw === 'string' || typeof raw === 'number') {
+    const code = String(raw);
+    if (code === '1') return '合格';
+    if (code === '2') return '不合格';
+  }
+  return undefined;
+}
+
 /**
  * 解析基础资料对象上某个属性的字符串值，兼容三种格式：
  * - 直接字符串："xxx"
