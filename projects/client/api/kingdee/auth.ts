@@ -8,6 +8,7 @@
  * - Logout（登出，5.1.18）
  */
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getKingdeeBaseUrl,
   fetchWithTimeout,
@@ -31,12 +32,32 @@ function getValidateUserUrl(): string {
   return `${getKingdeeBaseUrl()}/K3Cloud/Kingdee.BOS.WebApi.ServicesStub.AuthService.ValidateUser.common.kdsvc`;
 }
 
+export const DEFAULT_KINGDEE_ACCT_ID = '6a015236279e5b';
+const KINGDEE_ACCT_ID_STORAGE_KEY = 'kingdee_acct_id';
+let _acctId: string = DEFAULT_KINGDEE_ACCT_ID;
+
+export function getKingdeeAcctId(): string { return _acctId; }
+
+export async function setKingdeeAcctId(id: string): Promise<void> {
+  _acctId = id.trim() || DEFAULT_KINGDEE_ACCT_ID;
+  await AsyncStorage.setItem(KINGDEE_ACCT_ID_STORAGE_KEY, _acctId);
+}
+
+export async function initKingdeeAcctId(): Promise<void> {
+  try {
+    const saved = await AsyncStorage.getItem(KINGDEE_ACCT_ID_STORAGE_KEY);
+    if (saved) _acctId = saved;
+  } catch (error) {
+    console.error('Failed to restore Kingdee acct ID:', error);
+  }
+}
+
 /** 固定登录配置 */
-const ACCT_ID = '6a015236279e5b';
 const DEFAULT_USER_NAME = 'soundboxpod';
 const APP_ID = '331723_QcbJ49tF0phbwV+OS67sTc1q7sWXWLoP';
 const APP_SECRET = '64f63ed472534bf5b2538969f25e4777';
 const LCID = 2052;
+
 
 /**
  * 生成 SHA256 签名
@@ -49,7 +70,7 @@ const LCID = 2052;
  */
 async function generateSign(timestamp: number, username?: string): Promise<string> {
   const userName = username || DEFAULT_USER_NAME;
-  const arr = [ACCT_ID, userName, APP_ID, APP_SECRET, String(timestamp)];
+  const arr = [getKingdeeAcctId(), userName, APP_ID, APP_SECRET, String(timestamp)];
   // 等效于 C# Array.Sort(arr, StringComparer.Ordinal)：按 UTF-16/Unicode 码点字典序
   arr.sort((a, b) => {
     if (a < b) return -1;
@@ -84,7 +105,7 @@ export async function loginBySign(username?: string): Promise<KingdeeLoginResult
   const sign = await generateSign(timestamp, username);
 
   const userName = username || DEFAULT_USER_NAME;
-  const params = [ACCT_ID, userName, APP_ID, String(timestamp), sign, LCID];
+  const params = [getKingdeeAcctId(), userName, APP_ID, String(timestamp), sign, LCID];
 
   let res: Response;
   try {
@@ -153,7 +174,7 @@ export async function loginBySign(username?: string): Promise<KingdeeLoginResult
 export async function validateUser(username: string, password: string): Promise<KingdeeLoginResult> {
   clearKingdeeSession();
 
-  const params = [ACCT_ID, username, password, LCID];
+  const params = [getKingdeeAcctId(), username, password, LCID];
 
   let res: Response;
   try {

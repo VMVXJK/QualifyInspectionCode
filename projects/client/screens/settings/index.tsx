@@ -12,6 +12,7 @@ import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/contexts/AuthContext';
 import { getKingdeeBaseUrl, setKingdeeBaseUrl, DEFAULT_KINGDEE_BASE_URL } from '@/api/kingdee/client';
+import { getKingdeeAcctId, setKingdeeAcctId, DEFAULT_KINGDEE_ACCT_ID, validateUser, logoutKingdee } from '@/api/kingdee/auth';
 import { showSuccess, showError } from '@/utils/toast';
 
 /** 从完整地址中提取纯 host（去掉协议前缀），供输入框展示 */
@@ -29,9 +30,46 @@ export default function SettingsScreen() {
   const [errorMsg, setErrorMsg] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const [acctId, setAcctId] = useState(DEFAULT_KINGDEE_ACCT_ID);
+  const [testUsername, setTestUsername] = useState('');
+  const [testPassword, setTestPassword] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
   useEffect(() => {
     setHost(stripProtocol(getKingdeeBaseUrl()));
+    setAcctId(getKingdeeAcctId());
   }, []);
+
+  const handleSaveAcctId = async () => {
+    const trimmed = acctId.trim();
+    if (!trimmed) return;
+    await setKingdeeAcctId(trimmed);
+    if (isAuthenticated) {
+      await logout();
+      showSuccess('账套ID已更新，请重新登录');
+    } else {
+      showSuccess('账套ID已更新');
+    }
+  };
+
+  const handleTestConnection = async () => {
+    if (!testUsername.trim() || !testPassword.trim()) {
+      setTestResult({ ok: false, msg: '请输入测试账号和密码' });
+      return;
+    }
+    setTesting(true);
+    setTestResult(null);
+    try {
+      await validateUser(testUsername.trim(), testPassword.trim());
+      setTestResult({ ok: true, msg: '连接成功' });
+    } catch (e) {
+      setTestResult({ ok: false, msg: e instanceof Error ? e.message : '连接失败' });
+    } finally {
+      logoutKingdee().catch(() => {});
+      setTesting(false);
+    }
+  };
 
   const handleSaveServer = async () => {
     const trimmed = host.trim();
@@ -142,6 +180,92 @@ export default function SettingsScreen() {
                 disabled={saving}
               >
                 <Text style={styles.saveBtnText}>{saving ? '保存中…' : '保存'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 账套ID */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>账套ID</Text>
+            <View style={styles.inputBox}>
+              <Ionicons name="business-outline" size={18} color="#2563EB" />
+              <TextInput
+                style={styles.inputField}
+                value={acctId}
+                onChangeText={setAcctId}
+                placeholder={DEFAULT_KINGDEE_ACCT_ID}
+                placeholderTextColor="#94A3B8"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            <Text style={styles.hintText}>修改后需要重新登录才能生效</Text>
+            <View style={styles.serverActions}>
+              <TouchableOpacity
+                style={styles.resetBtn}
+                onPress={() => setAcctId(DEFAULT_KINGDEE_ACCT_ID)}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.resetBtnText}>重置为默认</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={handleSaveAcctId}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.saveBtnText}>保存</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 测试连接 */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>测试连接</Text>
+            <View style={[styles.inputBox, { marginBottom: 10 }]}>
+              <Ionicons name="person-outline" size={18} color="#2563EB" />
+              <TextInput
+                style={styles.inputField}
+                value={testUsername}
+                onChangeText={(v) => { setTestUsername(v); setTestResult(null); }}
+                placeholder="测试账号"
+                placeholderTextColor="#94A3B8"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            <View style={styles.inputBox}>
+              <Ionicons name="lock-closed-outline" size={18} color="#2563EB" />
+              <TextInput
+                style={styles.inputField}
+                value={testPassword}
+                onChangeText={(v) => { setTestPassword(v); setTestResult(null); }}
+                placeholder="测试密码"
+                placeholderTextColor="#94A3B8"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+            </View>
+            {testResult ? (
+              <View style={[styles.errorBox, { marginTop: 10 }]}>
+                <Ionicons
+                  name={testResult.ok ? 'checkmark-circle' : 'alert-circle'}
+                  size={14}
+                  color={testResult.ok ? '#10B981' : '#DC2626'}
+                />
+                <Text style={[styles.errorText, { color: testResult.ok ? '#10B981' : '#DC2626' }]}>
+                  {testResult.msg}
+                </Text>
+              </View>
+            ) : null}
+            <View style={[styles.serverActions, { marginTop: 14 }]}>
+              <TouchableOpacity
+                style={[styles.saveBtn, testing && styles.saveBtnDisabled]}
+                onPress={handleTestConnection}
+                activeOpacity={0.85}
+                disabled={testing}
+              >
+                <Text style={styles.saveBtnText}>{testing ? '测试中…' : '测试连接'}</Text>
               </TouchableOpacity>
             </View>
           </View>

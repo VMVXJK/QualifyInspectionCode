@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { WebOnlyColorSchemeUpdater } from './ColorSchemeUpdater';
 import { WebOnlyPrettyScrollbar } from './PrettyScrollbar';
 import { initKingdeeBaseUrl } from '@/api/kingdee/client';
+import { initKingdeeAcctId } from '@/api/kingdee/auth';
 import { useSessionGuard } from '@/hooks/useSessionGuard';
 
 function SessionGuard() {
@@ -14,6 +15,7 @@ function SessionGuard() {
 function Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
     initKingdeeBaseUrl().catch(console.error);
+    initKingdeeAcctId().catch(console.error);
   }, []);
 
   return (
