@@ -85,6 +85,12 @@ const SERVICE_URLS = {
 export type KingdeeServiceName = keyof typeof SERVICE_URLS;
 
 let sessionCookie: string | null = null;
+let _sessionExpiredHandler: (() => void) | null = null;
+
+/** 注册会话过期回调（由根组件调用，全局只注册一次） */
+export function setSessionExpiredHandler(handler: (() => void) | null) {
+  _sessionExpiredHandler = handler;
+}
 
 /** 设置/更新会话 Cookie */
 export function setKingdeeSessionCookie(cookie: string | null) {
@@ -264,6 +270,7 @@ async function executeRequest<T>(
 
     if (msgCode === 1) {
       clearKingdeeSession();
+      _sessionExpiredHandler?.();
       throw new Error('SESSION_LOST');
     }
   }

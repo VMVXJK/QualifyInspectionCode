@@ -1601,7 +1601,7 @@ export async function submitInspectionResult(params: {
     FEntity: [modelEntry],
   };
   if (inspector) {
-    model.FInspectorId = { FNumber: inspector };
+    model.FInspectorId = { FNUMBER: inspector };
   }
 
   // 5. 构造极简请求（只传 IsDeleteEntry 和 Model）
@@ -1713,7 +1713,7 @@ export async function submitInspectBill(numbers: string[], orgId?: number) {
   }>('Submit', requestBody);
 
   const status = result.Result?.ResponseStatus ?? result.ResponseStatus;
-  if (!status.IsSuccess) {
+  if (!status?.IsSuccess) {
     const err = status.Errors?.[0];
     throw new Error(err?.Message || '提交检验单失败');
   }

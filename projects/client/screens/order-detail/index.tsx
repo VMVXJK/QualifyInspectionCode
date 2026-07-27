@@ -384,7 +384,9 @@ export default function OrderDetailScreen() {
                 methodVal={form.editingMethods[item.detail_id || item.item_id]}
                 instrumentVal={form.editingInstruments[item.detail_id || item.item_id]}
                 predictedResult={form.getItemResult(item)}
+                manualResult={form.editingResults[item.detail_id || item.item_id]}
                 onChange={form.handleItemChange}
+                onResultChange={form.handleResultChange}
                 onPressSelect={(it) => {
                   setQualitativeDetailId(it.detail_id || it.item_id);
                   setQualitativeValue(form.editingItems[it.detail_id || it.item_id] ?? it.inspect_val ?? '');

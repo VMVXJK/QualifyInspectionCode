@@ -2,6 +2,14 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loginBySign, logoutKingdee, validateUser } from '@/api/kingdee/auth';
 import { clearKingdeeSession } from '@/api/kingdee/client';
+import {
+  syncQCSchemes,
+  syncInspectItems,
+  syncInspectMethods,
+  syncInspectInstruments,
+  syncInspectValueOptions,
+  syncBillTypes,
+} from '@/api/kingdee/inspect';
 import { recordHistory } from '@/utils/operationHistory';
 import type { KingdeeLoginResult } from '@/api/kingdee/types';
 
@@ -124,6 +132,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       // 记录登录历史（只记用户名，不记密码）
       await recordLoginHistory(credentials.username);
+
+      // 登录成功后后台静默同步基础数据（不阻塞登录跳转）
+      Promise.allSettled([
+        syncQCSchemes(),
+        syncInspectItems(),
+        syncInspectMethods(),
+        syncInspectInstruments(),
+        syncInspectValueOptions(),
+        syncBillTypes(),
+      ]).catch(() => { /* 静默忽略同步失败 */ });
     } else {
       // 向后兼容：无参数时使用默认账号签名登录
       const result = await loginBySign();

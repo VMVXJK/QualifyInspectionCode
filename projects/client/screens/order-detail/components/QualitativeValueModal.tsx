@@ -1,5 +1,5 @@
-import React from 'react';
-import { Modal, View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { Modal, View, Text, TouchableOpacity, ScrollView, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 export interface QualitativeOption {
@@ -24,8 +24,18 @@ export function QualitativeValueModal({
   onSelect,
   onClose,
 }: QualitativeValueModalProps) {
+  const [searchText, setSearchText] = useState('');
+
+  const filtered = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (!q) return options;
+    return options.filter(
+      (opt) => opt.code.toLowerCase().includes(q) || opt.text.toLowerCase().includes(q)
+    );
+  }, [options, searchText]);
+
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.content}>
           <View style={styles.header}>
@@ -35,6 +45,24 @@ export function QualitativeValueModal({
             </TouchableOpacity>
           </View>
 
+          {/* 搜索框 */}
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={16} color="#94A3B8" style={{ marginRight: 8 }} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="搜索编号或检验内容..."
+              placeholderTextColor="#94A3B8"
+              value={searchText}
+              onChangeText={setSearchText}
+              autoCorrect={false}
+            />
+            {searchText.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchText('')}>
+                <Ionicons name="close-circle" size={16} color="#94A3B8" />
+              </TouchableOpacity>
+            )}
+          </View>
+
           {/* 表头 */}
           <View style={styles.tableHeader}>
             <Text style={[styles.headerText, styles.codeCol]}>编号</Text>
@@ -42,31 +70,37 @@ export function QualitativeValueModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            {options.map((opt) => {
-              const isActive = value === opt.code;
-              return (
-                <TouchableOpacity
-                  key={opt.code}
-                  style={[styles.row, isActive && styles.rowActive]}
-                  onPress={() => onSelect(opt.code)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.codeCol}>
-                    <Text style={[styles.codeText, isActive && styles.textActive]}>
-                      {opt.code}
-                    </Text>
-                  </View>
-                  <View style={styles.textCol}>
-                    <Text style={[styles.textText, isActive && styles.textActive]}>
-                      {opt.text}
-                    </Text>
-                  </View>
-                  {isActive && (
-                    <Ionicons name="checkmark" size={18} color="#2563EB" style={styles.checkIcon} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+            {filtered.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyText}>无匹配结果</Text>
+              </View>
+            ) : (
+              filtered.map((opt) => {
+                const isActive = value === opt.code;
+                return (
+                  <TouchableOpacity
+                    key={opt.code}
+                    style={[styles.row, isActive && styles.rowActive]}
+                    onPress={() => onSelect(opt.code)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.codeCol}>
+                      <Text style={[styles.codeText, isActive && styles.textActive]}>
+                        {opt.code}
+                      </Text>
+                    </View>
+                    <View style={styles.textCol}>
+                      <Text style={[styles.textText, isActive && styles.textActive]}>
+                        {opt.text}
+                      </Text>
+                    </View>
+                    {isActive && (
+                      <Ionicons name="checkmark" size={18} color="#2563EB" style={styles.checkIcon} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </ScrollView>
         </View>
       </View>
@@ -98,6 +132,28 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: '#1E293B',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1E293B',
+  },
+  emptyBox: {
+    paddingVertical: 32,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#94A3B8',
   },
   tableHeader: {
     flexDirection: 'row',

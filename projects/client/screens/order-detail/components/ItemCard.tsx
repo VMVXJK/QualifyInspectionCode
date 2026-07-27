@@ -13,7 +13,10 @@ interface ItemCardProps {
   instrumentVal?: string;
   /** 客户端根据检测值+上下限实时预判的结果（合格/不合格/待检），尚未提交保存前用此值兜底展示 */
   predictedResult?: string;
+  /** 用户手动覆盖的判定结果（优先级最高） */
+  manualResult?: '合格' | '不合格';
   onChange: (detailId: string, val: string) => void;
+  onResultChange?: (detailId: string, val: '合格' | '不合格') => void;
   onPressSelect?: (item: LocalItem) => void;
   onPressMethodSelect?: (item: LocalItem) => void;
   onPressInstrumentSelect?: (item: LocalItem) => void;
@@ -25,7 +28,9 @@ export function ItemCard({
   methodVal,
   instrumentVal,
   predictedResult,
+  manualResult,
   onChange,
+  onResultChange,
   onPressSelect,
   onPressMethodSelect,
   onPressInstrumentSelect,
@@ -33,12 +38,13 @@ export function ItemCard({
   const method = (item.analysis_method || '').trim();
   const isQualitative = method.includes('定性');
 
-  // 判定结果：优先使用金蝶已保存的结果（inspect_result1），未保存时用客户端实时预判兜底
+  // 判定结果优先级：手动覆盖 > 金蝶已保存 > 客户端实时预判
   const confirmedResult = item.inspect_result1;
-  const displayResult = confirmedResult || predictedResult || '待检';
-  const isConfirmed = !!confirmedResult;
+  const displayResult = manualResult || confirmedResult || predictedResult || '待检';
+  const isManual = !!manualResult;
+  const isConfirmed = !isManual && !!confirmedResult;
 
-  // 检验结果标签样式
+  // 顶部标签样式
   const resultMeta = (() => {
     if (displayResult === '合格') return { label: '合格', color: '#059669', bg: '#D1FAE5' };
     if (displayResult === '不合格') return { label: '不合格', color: '#DC2626', bg: '#FEE2E2' };
@@ -107,19 +113,29 @@ export function ItemCard({
         </View>
       ) : null}
 
-      {/* 判定结果 */}
+      {/* 判定结果 — 可手动切换 */}
       <View style={styles.row}>
         <Text style={styles.label}>判定结果</Text>
-        <Text
-          style={[
-            styles.readonly,
-            displayResult === '合格' && styles.pass,
-            displayResult === '不合格' && styles.fail,
-          ]}
-        >
-          {displayResult}
-          {!isConfirmed && displayResult !== '待检' ? '（预判）' : ''}
-        </Text>
+        <View style={styles.resultBtns}>
+          {(['合格', '不合格'] as const).map((opt) => {
+            const active = displayResult === opt;
+            const color = opt === '合格' ? '#059669' : '#DC2626';
+            const bg = opt === '合格' ? '#D1FAE5' : '#FEE2E2';
+            return (
+              <TouchableOpacity
+                key={opt}
+                style={[styles.resultBtn, active && { backgroundColor: bg, borderColor: color }]}
+                onPress={() => onResultChange?.(item.detail_id || item.item_id, opt)}
+                activeOpacity={0.75}
+              >
+                <Text style={[styles.resultBtnText, active && { color, fontWeight: '700' }]}>{opt}</Text>
+              </TouchableOpacity>
+            );
+          })}
+          {!isManual && !isConfirmed && displayResult !== '待检' && (
+            <Text style={styles.predictLabel}>预判</Text>
+          )}
+        </View>
       </View>
 
       {/* 检验方法 */}
@@ -258,6 +274,27 @@ const styles = StyleSheet.create({
   fail: {
     color: '#DC2626',
     fontWeight: '600',
+  },
+  resultBtns: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  resultBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+  },
+  resultBtnText: {
+    fontSize: 13,
+    color: '#64748B',
+  },
+  predictLabel: {
+    fontSize: 11,
+    color: '#94A3B8',
   },
   defectLevel: {
     color: '#D97706',

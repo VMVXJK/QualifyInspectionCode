@@ -4,10 +4,15 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { WebOnlyColorSchemeUpdater } from './ColorSchemeUpdater';
 import { WebOnlyPrettyScrollbar } from './PrettyScrollbar';
 import { initKingdeeBaseUrl } from '@/api/kingdee/client';
+import { useSessionGuard } from '@/hooks/useSessionGuard';
+
+function SessionGuard() {
+  useSessionGuard();
+  return null;
+}
 
 function Provider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    // 应用启动时恢复金蝶服务器地址
     initKingdeeBaseUrl().catch(console.error);
   }, []);
 
@@ -16,6 +21,7 @@ function Provider({ children }: { children: ReactNode }) {
       <WebOnlyPrettyScrollbar>
         <AuthProvider>
           <GestureHandlerRootView style={{ flex: 1 }}>
+            <SessionGuard />
             {children}
           </GestureHandlerRootView>
         </AuthProvider>

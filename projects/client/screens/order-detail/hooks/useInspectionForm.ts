@@ -22,6 +22,7 @@ interface UseInspectionFormResult {
   editingItems: Record<string, string>;
   editingMethods: Record<string, string>;
   editingInstruments: Record<string, string>;
+  editingResults: Record<string, '合格' | '不合格'>;
   editingDecisions: LocalDecision[];
   saveDiagnostics: SaveDiagnostics | null;
   showSaveDiagnostics: boolean;
@@ -29,6 +30,7 @@ interface UseInspectionFormResult {
   handleItemChange: (detailId: string, val: string) => void;
   handleMethodChange: (detailId: string, val: string) => void;
   handleInstrumentChange: (detailId: string, val: string) => void;
+  handleResultChange: (detailId: string, val: '合格' | '不合格') => void;
   getItemResult: (item: LocalItem) => string;
   setEditingDecisions: React.Dispatch<React.SetStateAction<LocalDecision[]>>;
   addDecision: () => void;
@@ -89,6 +91,9 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     return init;
   });
 
+  // 判定结果手动覆盖态：detailId -> 合格|不合格
+  const [editingResults, setEditingResults] = useState<Record<string, '合格' | '不合格'>>({});
+
   // 决策编辑态
   const [editingDecisions, setEditingDecisions] = useState<LocalDecision[]>(initialDecisions);
 
@@ -104,29 +109,38 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     setLocalItems(items);
   }, [items]);
 
-  // 当外部数据刷新时同步状态
+  // 当外部数据刷新时同步状态，已编辑的字段保留用户值，新字段才从服务端填入
   useEffect(() => {
-    const init: Record<string, string> = {};
-    items.forEach((it) => {
-      if (it.detail_id) init[it.detail_id] = it.inspect_val || '';
+    setEditingItems((prev) => {
+      const init: Record<string, string> = {};
+      items.forEach((it) => {
+        const key = it.detail_id && it.detail_id !== '0' ? it.detail_id : it.item_id;
+        init[key] = key in prev ? prev[key] : (it.inspect_val || '');
+      });
+      return init;
     });
-    setEditingItems(init);
   }, [items]);
 
   useEffect(() => {
-    const init: Record<string, string> = {};
-    items.forEach((it) => {
-      if (it.detail_id) init[it.detail_id] = it.inspect_method_name || '';
+    setEditingMethods((prev) => {
+      const init: Record<string, string> = {};
+      items.forEach((it) => {
+        const key = it.detail_id && it.detail_id !== '0' ? it.detail_id : it.item_id;
+        init[key] = key in prev ? prev[key] : (it.inspect_method_name || '');
+      });
+      return init;
     });
-    setEditingMethods(init);
   }, [items]);
 
   useEffect(() => {
-    const init: Record<string, string> = {};
-    items.forEach((it) => {
-      if (it.detail_id) init[it.detail_id] = it.inspect_instrument_name || '';
+    setEditingInstruments((prev) => {
+      const init: Record<string, string> = {};
+      items.forEach((it) => {
+        const key = it.detail_id && it.detail_id !== '0' ? it.detail_id : it.item_id;
+        init[key] = key in prev ? prev[key] : (it.inspect_instrument_name || '');
+      });
+      return init;
     });
-    setEditingInstruments(init);
   }, [items]);
 
   useEffect(() => {
@@ -149,10 +163,16 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     setEditingInstruments((prev) => ({ ...prev, [detailId]: val }));
   }, []);
 
+  const handleResultChange = useCallback((detailId: string, val: '合格' | '不合格') => {
+    setEditingResults((prev) => ({ ...prev, [detailId]: val }));
+  }, []);
+
   const getItemResult = useCallback((item: LocalItem): string => {
-    const val = editingItems[item.detail_id || item.item_id] ?? item.inspect_val ?? '';
+    const id = item.detail_id || item.item_id;
+    if (editingResults[id]) return editingResults[id];
+    const val = editingItems[id] ?? item.inspect_val ?? '';
     return autoJudge(val, item.upper_limit, item.lower_limit);
-  }, [editingItems]);
+  }, [editingItems, editingResults]);
 
   const addDecision = useCallback(() => {
     setEditingDecisions((prev) => [
@@ -197,17 +217,21 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     if (!ok) return;
 
     try {
-      const mappedItems = localItems.map((it) => ({
-        detail_id: it.detail_id,
-        item_id: it.item_id,
-        inspect_val: editingItems[it.detail_id || it.item_id] ?? it.inspect_val ?? '',
-        upper_limit: it.upper_limit,
-        lower_limit: it.lower_limit,
-        analysis_method: it.analysis_method,
-        method_code: it.method_code,
-        instrument_code: it.instrument_code,
-        quality_std_code: it.quality_std_code,
-      }));
+      const mappedItems = localItems.map((it) => {
+        const key = it.detail_id && it.detail_id !== '0' ? it.detail_id : it.item_id;
+        return {
+          detail_id: it.detail_id,
+          item_id: it.item_id,
+          inspect_val: editingItems[key] ?? it.inspect_val ?? '',
+          upper_limit: it.upper_limit,
+          lower_limit: it.lower_limit,
+          analysis_method: it.analysis_method,
+          method_code: it.method_code,
+          instrument_code: it.instrument_code,
+          quality_std_code: it.quality_std_code,
+          result: editingResults[key],
+        };
+      });
 
       const mappedDefects = defects.map((d) => ({
         detail_id: d.detail_id?.startsWith('temp_') ? undefined : d.detail_id,
@@ -235,9 +259,10 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
         billId: order.id,
         entryId: material?.entry_id,
         inspector: user?.name || '',
-        billResult: mappedItems.every((it) => autoJudge(it.inspect_val, it.upper_limit, it.lower_limit) === '合格')
-          ? '合格'
-          : '不合格',
+        billResult: mappedItems.every((it) => {
+          if (it.result) return it.result === '合格';
+          return autoJudge(it.inspect_val, it.upper_limit, it.lower_limit) === '合格';
+        }) ? '合格' : '不合格',
         items: mappedItems,
         defects: mappedDefects,
         decisions: mappedDecisions,
@@ -276,7 +301,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
         detail: message,
       });
     }
-  }, [order, material, localItems, defects, editingDecisions, editingItems, rawBill, fetchDetail, user]);
+  }, [order, material, localItems, defects, editingDecisions, editingItems, editingResults, rawBill, fetchDetail, user]);
 
   const replaceItemsFromScheme = useCallback((newItems: LocalItem[], schemeCode: string, schemeName: string) => {
     setLocalItems(newItems);
@@ -286,7 +311,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     const initMethods: Record<string, string> = {};
     const initInstruments: Record<string, string> = {};
     newItems.forEach((it) => {
-      const key = it.detail_id || it.item_id;
+      const key = it.detail_id && it.detail_id !== '0' ? it.detail_id : it.item_id;
       initVals[key] = it.inspect_val || '';
       initMethods[key] = it.inspect_method_name || '';
       initInstruments[key] = it.inspect_instrument_name || '';
@@ -330,6 +355,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     editingItems,
     editingMethods,
     editingInstruments,
+    editingResults,
     editingDecisions,
     saveDiagnostics,
     showSaveDiagnostics,
@@ -337,6 +363,7 @@ export function useInspectionForm(params: UseInspectionFormParams): UseInspectio
     handleItemChange,
     handleMethodChange,
     handleInstrumentChange,
+    handleResultChange,
     getItemResult,
     setEditingDecisions,
     addDecision,
