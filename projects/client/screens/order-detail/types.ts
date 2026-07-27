@@ -36,6 +36,12 @@ export interface LocalMaterial {
   qc_scheme_code?: string;
   /** 质检方案名称 */
   qc_scheme_name?: string;
+  /** 供应商名称 */
+  supplier_name?: string;
+  /** 批号 */
+  lot_no?: string;
+  /** 到货数量 */
+  receive_qty?: number;
 }
 
 export interface LocalDecision {

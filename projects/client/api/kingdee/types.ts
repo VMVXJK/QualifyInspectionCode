@@ -95,6 +95,10 @@ export interface InspectBillEntry {
   // 单位：兼容两种字段名和两种基础资料格式
   FUnitID?: KdBaseDataUnion;
   FUNITID?: KdBaseDataUnion;
+  FSupplierID?: KdBaseDataUnion; // 供应商
+  FLot?: string; // 批号（BillQuery 格式）
+  FLotNo?: string; // 批号（View API 驼峰）
+  FReceiveQty?: number; // 到货数量
   FINSPECTQTY?: number; // 检验数量（送检数量）
   FInspectQty?: number; // View API 驼峰格式
   FQualifiedQty?: number; // 合格数量（View API）
@@ -218,6 +222,12 @@ export interface MaterialInfo {
   qc_scheme_code?: string;
   /** 质检方案名称 */
   qc_scheme_name?: string;
+  /** 供应商名称 */
+  supplier_name?: string;
+  /** 批号 */
+  lot_no?: string;
+  /** 到货数量 */
+  receive_qty?: number;
 }
 
 export interface DecisionInfo {

@@ -2113,6 +2113,10 @@ export function convertBillToLocal(bill: InspectBill): {
         inspect_result: matInspectResult,
         qc_scheme_code: qcSchemeBase.number,
         qc_scheme_name: qcSchemeBase.name,
+        supplier_name: pickBaseData(matRec, ['FSupplierID', 'FSupplierId']).name ||
+          pickString(matRec, ['FSupplierName', 'SupplierName']),
+        lot_no: pickString(matRec, ['FLotNo', 'FLot', 'LotNo']),
+        receive_qty: pickNumber(matRec, ['FReceiveQty', 'ReceiveQty']),
       }
     : undefined;
 

@@ -297,6 +297,9 @@ export default function OrderDetailScreen() {
             onPress={() => setShowQCSchemeModal(true)}
           />
           <InfoRow label="单位 *" value={material?.unit} />
+          <InfoRow label="供应商" value={material?.supplier_name} />
+          <InfoRow label="批号" value={material?.lot_no} />
+          <InfoRow label="到货数量" value={material?.receive_qty?.toString()} />
           <InfoRow label="检验数量" value={material?.inspect_qty?.toString()} />
           <InfoRow label="合格数" value={material?.qualified_qty?.toString()} />
           <InfoRow label="不合格数" value={material?.unqualified_qty?.toString()} />
