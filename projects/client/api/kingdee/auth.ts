@@ -32,7 +32,7 @@ function getValidateUserUrl(): string {
   return `${getKingdeeBaseUrl()}/K3Cloud/Kingdee.BOS.WebApi.ServicesStub.AuthService.ValidateUser.common.kdsvc`;
 }
 
-export const DEFAULT_KINGDEE_ACCT_ID = '6a015236279e5b';
+export const DEFAULT_KINGDEE_ACCT_ID = '6a49b0de235d50';
 const KINGDEE_ACCT_ID_STORAGE_KEY = 'kingdee_acct_id';
 let _acctId: string = DEFAULT_KINGDEE_ACCT_ID;
 
@@ -54,8 +54,8 @@ export async function initKingdeeAcctId(): Promise<void> {
 
 /** 固定登录配置 */
 const DEFAULT_USER_NAME = 'soundboxpod';
-const APP_ID = '331723_QcbJ49tF0phbwV+OS67sTc1q7sWXWLoP';
-const APP_SECRET = '64f63ed472534bf5b2538969f25e4777';
+const APP_ID = '350299_0/ap7yttyupW2/Sv30RMScwH7i492Ltu';
+const APP_SECRET = '25123c6fe4e347afb23db4cdf3c7ede2';
 const LCID = 2052;
 
 

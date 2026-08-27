@@ -12,7 +12,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /** 金蝶云星空默认服务器地址（用户未自定义时使用） */
-export const DEFAULT_KINGDEE_BASE_URL = 'https://121.37.216.69';
+export const DEFAULT_KINGDEE_BASE_URL = 'https://139.159.143.123';
 
 const KINGDEE_BASE_URL_STORAGE_KEY = 'kingdee_base_url';
 

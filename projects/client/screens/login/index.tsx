@@ -16,6 +16,7 @@ import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth, getRememberedCredentials } from '@/contexts/AuthContext';
 import { getKingdeeBaseUrl } from '@/api/kingdee/client';
+import { getKingdeeAcctId } from '@/api/kingdee/auth';
 import { showSuccess, showError } from '@/utils/toast';
 
 const { height: SCREEN_H } = Dimensions.get('window');
@@ -98,7 +99,7 @@ export default function LoginScreen() {
             {/* 账套信息 */}
             <View style={styles.acctRow}>
               <Ionicons name="business-outline" size={16} color="#64748B" />
-              <Text style={styles.acctText}>账套：（测试）2022 声博士账套</Text>
+              <Text style={styles.acctText}>账套ID：{getKingdeeAcctId()}</Text>
             </View>
 
             {/* 用户名 */}
