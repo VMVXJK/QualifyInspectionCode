@@ -57,7 +57,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loginResult, setLoginResult] = useState<KingdeeLoginResult | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 启动时：先清理旧会话，再尝试恢复记住的用户状态
+  // 启动时：清理旧会话，不恢复登录状态，强制用户重新登录
+  // （sessionCookie 是内存变量，重启后必然丢失，若仍从 AsyncStorage 恢复
+  //  user/loginResult 会导致界面显示"已登录"但请求全部因 SESSION_LOST 失败）
   useEffect(() => {
     const init = async () => {
       try {
@@ -66,23 +68,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch {
         // 忽略
       } finally {
-        // 无论服务端是否响应，强制清理本地会话
+        // 强制清理本地会话与已登录状态，用户需重新登录
         clearKingdeeSession();
         setLoginResult(null);
-
-        // 尝试恢复已登录用户信息（仅恢复 UI 状态，不自动登录）
-        try {
-          const userJson = await AsyncStorage.getItem(USER_KEY);
-          if (userJson) {
-            setUser(JSON.parse(userJson));
-          }
-          const resultJson = await AsyncStorage.getItem(LOGIN_RESULT_KEY);
-          if (resultJson) {
-            setLoginResult(JSON.parse(resultJson));
-          }
-        } catch {
-          // 忽略恢复错误
-        }
+        setUser(null);
+        await AsyncStorage.multiRemove([USER_KEY, LOGIN_RESULT_KEY]);
 
         setIsLoading(false);
       }

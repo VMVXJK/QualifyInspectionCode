@@ -1,0 +1,136 @@
+{
+  "meta": {
+    "exportedAt": "2026-08-27T04:13:30.000Z",
+    "purpose": "金蝶 LoginBySign 实际登录请求导出，供服务商核对签名算法",
+    "codeSource": "projects/client/api/kingdee/auth.ts generateSign() / loginBySign()"
+  },
+  "signGeneration": {
+    "inputArrayBeforeSort": [
+      "6a49b0de235d50",
+      "soundboxpod",
+      "350299_0/ap7yttyupW2/Sv30RMScwH7i492Ltu",
+      "25123c6fe4e347afb23db4cdf3c7ede2",
+      "1787804010"
+    ],
+    "sortAlgorithm": "Array.Sort(arr, StringComparer.Ordinal) 等效 —— Unicode码点字典序",
+    "sortedArray": [
+      "1787804010",
+      "25123c6fe4e347afb23db4cdf3c7ede2",
+      "350299_0/ap7yttyupW2/Sv30RMScwH7i492Ltu",
+      "6a49b0de235d50",
+      "soundboxpod"
+    ],
+    "concatenatedString": "178780401025123c6fe4e347afb23db4cdf3c7ede2350299_0/ap7yttyupW2/Sv30RMScwH7i492Ltu6a49b0de235d50soundboxpod",
+    "hashAlgorithm": "SHA256",
+    "signature": "b2c94281155478974e420222bf3dbe81bb69a6381f4a17a0ac6258c86caead8e"
+  },
+  "request": {
+    "url": "https://139.159.143.123/K3Cloud/Kingdee.BOS.WebApi.ServicesStub.AuthService.LoginBySign.common.kdsvc",
+    "method": "POST",
+    "headers": {
+      "Content-Type": "application/json;charset=UTF-8"
+    },
+    "body": {
+      "parameters": [
+        "6a49b0de235d50",
+        "soundboxpod",
+        "350299_0/ap7yttyupW2/Sv30RMScwH7i492Ltu",
+        "1787804010",
+        "b2c94281155478974e420222bf3dbe81bb69a6381f4a17a0ac6258c86caead8e",
+        2052
+      ]
+    }
+  },
+  "response": {
+    "Message": null,
+    "MessageCode": null,
+    "LoginResultType": 1,
+    "Context": {
+      "UserLocale": "zh-CN",
+      "LogLocale": "zh-CN",
+      "DBid": "6a49b0de235d50",
+      "DatabaseType": 3,
+      "SessionId": "i5qjglnuknh2todgzj13el35",
+      "UseLanguages": [
+        {
+          "LocaleId": 2052,
+          "LocaleName": "中文(简体)",
+          "Alias": "CN",
+          "LicenseType": 0
+        }
+      ],
+      "UserId": 236755,
+      "UserName": "soundboxpod",
+      "CustomName": "欧孚（广州）声学检测有限公司",
+      "DisplayVersion": "9.1.861.11",
+      "DataCenterName": "广州声博士技术股份有限公司",
+      "UserToken": "55e43324-4ddd-45bf-9d6a-863e4bc4deac",
+      "CurrentOrganizationInfo": {
+        "ID": 1,
+        "AcctOrgType": "1",
+        "Name": "广州声博士技术股份有限公司",
+        "FunctionIds": [101, 102, 103, 104, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115]
+      },
+      "IsCH_ZH_AutoTrans": false,
+      "ClientType": 32,
+      "WeiboAuthInfo": {
+        "WeiboUrl": null,
+        "NetWorkID": null,
+        "CompanyNetworkID": null,
+        "Account": null,
+        "TokenKey": null,
+        "TokenSecret": null,
+        "Verify": null,
+        "CallbackUrl": null,
+        "UserId": null
+      },
+      "UTimeZone": {
+        "OffsetTicks": 288000000000,
+        "StandardName": "(UTC+08:00)北京，重庆，香港特别行政区，乌鲁木齐",
+        "Id": 230,
+        "Number": "1078_SYS",
+        "CanBeUsed": true
+      },
+      "STimeZone": {
+        "OffsetTicks": 288000000000,
+        "StandardName": "(UTC+08:00)北京，重庆，香港特别行政区，乌鲁木齐",
+        "Id": 230,
+        "Number": "1078_SYS",
+        "CanBeUsed": true
+      },
+      "GDCID": "8b29cd28-9d4f-4409-8784-2de0fc74e52b",
+      "Gsid": "30b297136c134f3b925",
+      "TRLevel": 1,
+      "ProductEdition": 0,
+      "DataCenterNumber": "000",
+      "ContextResultType": 0,
+      "TenantId": "",
+      "IsDeployAsPublicCloud": false
+    },
+    "KDSVCSessionId": "66d987e2-e2e9-41d8-b4cf-d62b282b6e2c",
+    "FormId": null,
+    "RedirectFormParam": null,
+    "FormInputObject": null,
+    "ErrorStackTrace": null,
+    "Lcid": 0,
+    "AccessToken": null,
+    "CustomParam": {
+      "FChkGUIOldMainConsle": false,
+      "FChkEnabledSeqReq": false,
+      "FIsDisabledGridRowCopy": false,
+      "FIsDisabledCellSection": false,
+      "FFieldDisabledShowBorder": false,
+      "FListQuickFilterBackOld": false,
+      "FImgFileCompress": false,
+      "FSystemTipsRule": "",
+      "FUnAllowTableColumnAutoHidden": false,
+      "FChkToolBarFontLargeMode": false,
+      "FUnChkEnabledSeqReq": false,
+      "FCloseLRTips": false,
+      "GlobalWatermarkConfigStr": "eyJ3aWR0aCI6MzAwLCJoZWlnaHQiOjE2MCwiYW5nbGUiOi0xNSwid2F0ZXJtYXJrdGV4dCI6IiAiLCJsaWN0ZXh0IjoiIiwib3BhY2l0eSI6MC4xLCJmb250ZmFtaWx5IjoiTWljcm9zb2Z0IFlhSGVpIiwiZm9udHNpemUiOjE0LCJiaWdfZm9udHNpemUiOjE2LCJzaG93dHlwZSI6MH0="
+    },
+    "KdAccessResult": null,
+    "IsSuccessByAPI": true
+  },
+  "note": "此次调用使用 curl -k 忽略了 TLS 证书校验（新服务器 139.159.143.123 当前证书为弱密钥自签名证书，Android App 无法绕过校验，会在此步骤前失败）。签名算法、账套ID、APP_ID、APP_SECRET 均验证正确，LoginResultType=1 登录成功，与账套/密钥/签名无关，问题在服务器 HTTPS 证书。"
+}

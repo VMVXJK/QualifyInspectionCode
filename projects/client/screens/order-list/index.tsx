@@ -70,7 +70,7 @@ export default function OrderListScreen() {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
 
   const router = useSafeRouter();
-  const { isAuthenticated, logout, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, logout, isLoading: authLoading } = useAuth();
   const hasFetchedRef = useRef(false);
 
   /** 从本地缓存加载检验单列表（离线时也展示，仅标记为缓存） */
@@ -291,7 +291,7 @@ export default function OrderListScreen() {
           <TouchableOpacity style={styles.logoutBannerHome} onPress={handleLogout} activeOpacity={0.8}>
             <Ionicons name="log-out-outline" size={22} color="#B91C1C" />
             <View style={{ flex: 1, marginLeft: 10 }}>
-              <Text style={styles.logoutBannerHomeTitle}>已登录金蝶云星空</Text>
+              <Text style={styles.logoutBannerHomeTitle}>{user?.name ? `${user.name}　已登录金蝶云星空` : '已登录金蝶云星空'}</Text>
               <Text style={styles.logoutBannerHomeSub}>点击此处退出当前账号</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color="#DC2626" />
@@ -343,7 +343,7 @@ export default function OrderListScreen() {
         {/* 登录/退出提示 */}
         <View style={styles.logoutBanner}>
           <Ionicons name="shield-checkmark-outline" size={18} color="#059669" />
-          <Text style={styles.logoutBannerText}>已登录金蝶云星空</Text>
+          <Text style={styles.logoutBannerText}>{user?.name ? `${user.name}　已登录金蝶云星空` : '已登录金蝶云星空'}</Text>
           <TouchableOpacity onPress={handleLogout} style={{ marginLeft: 'auto' }}>
             <Text style={styles.logoutBannerAction}>退出</Text>
           </TouchableOpacity>

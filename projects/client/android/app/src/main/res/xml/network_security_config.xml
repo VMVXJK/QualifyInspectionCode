@@ -14,4 +14,15 @@
             <certificates src="user"/>
         </trust-anchors>
     </domain-config>
+
+    <!--
+      金蝶新服务器 139.159.143.123 证书为自签名 + RSA 1024 弱密钥，
+      直接内置证书作为信任锚点，免去用户手动安装证书的步骤。
+    -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">139.159.143.123</domain>
+        <trust-anchors>
+            <certificates src="@raw/kingdee_new_server"/>
+        </trust-anchors>
+    </domain-config>
 </network-security-config>
